@@ -1,0 +1,1 @@
+/home/jboisture/buildout/eggs/nose_cov-1.3-py2.7.egg/nose_cov.py

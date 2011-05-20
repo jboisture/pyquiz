@@ -1,0 +1,10 @@
+transaction >=1.1.0
+zc.lockfile
+ZConfig
+zdaemon
+zope.event
+zope.interface
+
+[test]
+zope.testing
+manuel

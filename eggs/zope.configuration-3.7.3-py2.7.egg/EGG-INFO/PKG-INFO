@@ -1,0 +1,201 @@
+Metadata-Version: 1.0
+Name: zope.configuration
+Version: 3.7.3
+Summary: Zope Configuration Markup Language (ZCML)
+Home-page: http://pypi.python.org/pypi/zope.configuration
+Author: Zope Foundation and Contributors
+Author-email: zope-dev@zope.org
+License: ZPL 2.1
+Description: zope.configuration
+        ==================
+        
+        Overview
+        --------
+        
+        The zope configuration system provides an extensible system for
+        supporting various kinds of configurations.
+        
+        It is based on the idea of configuration directives. Users of the
+        configuration system provide configuration directives in some
+        language that express configuration choices. The intent is that the
+        language be pluggable.  An XML language is provided by default.
+        
+        
+        Detailed Documentation
+        ----------------------
+        
+        
+        ==========================
+        Zope configuration system
+        ==========================
+        
+        The zope configuration system provides an extensible system for
+        supporting variouse kinds of configurations.
+        
+        It is based on the idea of configuration directives. Users of the
+        configuration system provide configuration directives in some
+        language that express configuration choices. The intent is that the
+        language be pluggable.  An XML language is provided by default.
+        
+        Configuration is performed in three stages. In the first stage,
+        directives are processed to compute configuration actions.
+        Configuration actions consist of:
+        
+        - A discriminator
+        
+        - A callable
+        
+        - Positional arguments
+        
+        - Keyword arguments
+        
+        The actions are essentially delayed function calls.  Two or more
+        actions conflict if they have the same discriminator.  The
+        configuration system has rules for resolving conflicts. If conflicts
+        cannot be resolved, an error will result.  Conflict resolution
+        typically discards all but one of the conflicting actions, so that
+        the remaining action of the originally-conflicting actions no longer
+        conflicts.  Non-conflicting actions are executed in the order that
+        they were created by passing the positional and non-positional
+        arguments to the action callable.
+        
+        The system is extensible. There is a meta-configuration language for
+        defining configuration directives. A directive is defined by
+        providing meta data about the directive and handler code to process
+        the directive.  There are four kinds of directives:
+        
+        - Simple directives compute configuration actions.  Their handlers
+          are typically functions that take a context and zero or more
+          keyword arguments and return a sequence of configuration actions.
+        
+          To learn how to create simple directives, see `tests/test_simple.py`.
+        
+        
+        - Grouping directives collect information to be used by nested
+          directives. They are called with a context object which they adapt
+          to some interface that extends IConfigurationContext.
+        
+          To learn how to create grouping directives, look at the
+          documentation in zopeconfigure.py, which provides the implementation
+          of the zope `configure` directive.
+        
+          Other directives can be nested in grouping directives.
+        
+          To learn how to implement nested directives, look at the
+          documentation in `tests/test_nested.py`.
+        
+        - Complex directives are directives that have subdirectives.  
+          Subdirectives have handlers that are simply methods of complex
+          directives. Complex diretives are handled by factories, typically
+          classes, that create objects that have methods for handling
+          subdirectives. These objects also have __call__ methods that are
+          called when processing of subdirectives is finished.
+        
+          Complex directives only exist to support old directive
+          handlers. They will probably be deprecated in the future.
+        
+        - Subdirectives are nested in complex directives. They are like
+          simple directives except that they hane handlers that are complex
+          directive methods.
+        
+          Subdirectives, like complex directives only exist to support old
+          directive handlers. They will probably be deprecated in the future.
+        
+        
+        =======
+        Changes
+        =======
+        
+        3.7.3 (2011-03-11)
+        ------------------
+        
+        - Correctly locate packages with a __path__ attribute but no
+          __file__ attribute (such as namespace packages installed with setup.py
+          install --single-version-externally-managed).
+        
+        - Allow "info" and "includepath" to be passed optionally to context.action.
+        
+        3.7.2 (2010-04-30)
+        ------------------
+        
+        - Prefer the standard libraries doctest module over zope.testing.doctest.
+        
+        3.7.1 (2010-01-05)
+        ------------------
+        
+        - Jython support: use ``__builtin__`` module import rather than assuming
+          ``__builtins__`` is available.
+        
+        - Jython support: deal with the fact that the Jython SAX parser
+          returns attribute sets that have an empty string indicating no
+          namespace instead of ``None``.
+        
+        - Allow ``setup.py test`` to run at least a subset of the tests that
+          would be run when using the zope testrunner: ``setup.py test`` runs
+          53 tests, while ``bin/test`` runs 156.
+        
+        3.7.0 (2009-12-22)
+        ------------------
+        
+        - Adjust testing output to newer zope.schema.
+        
+        - Prefer zope.testing.doctest over doctestunit.
+        
+        3.6.0 (2009-04-01)
+        ------------------
+        
+        - Removed dependency of `zope.deprecation` package.
+        
+        - Don't suppress deprecation warnings any more in 'zope.configuration'
+          package level. This makes it more likely other packages will generate
+          deprecation warnings now, which will allow us to remove more
+          outdated ones.
+        
+        - Don't fail when zope.testing is not installed.
+        
+        - Added missing ``processFile`` method to ``IConfigurationContext``.
+          It is already implemented in the mix-in class,
+          ``zope.configuration.config.ConfigurationContext``, and used by
+          implementations of ``include`` and ``exclude`` directives.
+        
+        3.5.0 (2009-02-26)
+        ------------------
+        
+        - Added the ``exclude`` directive to standard directives. It was
+          previously available via ``zc.configuration`` package and now it's
+          merged into ``zope.configuration``.
+        
+        - Changed package's mailing list address to zope-dev at zope.org,
+          change "cheeseshop" to "pypi" in the package's url.
+        
+        3.4.1 (2008-12-11)
+        ------------------
+        
+        - Use built-in 'set' type, rather than importin the 'sets' module,
+          which is deprecated in Python 2.6.
+        
+        - Added support to bootstrap on Jython.
+        
+        3.4.0 (2007-10-02)
+        ------------------
+        
+        - Initial release as a standalone package.
+        
+        Before 3.4.0
+        ------------
+        
+        This package was part of the Zope 3 distribution and did not have its own
+        CHANGES.txt. For earlier changes please refer to either our subversion log or
+        the CHANGES.txt of earlier Zope 3 releases.
+        
+Keywords: zope configuration zcml
+Platform: UNKNOWN
+Classifier: Development Status :: 5 - Production/Stable
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Zope Public License
+Classifier: Programming Language :: Python
+Classifier: Natural Language :: English
+Classifier: Operating System :: OS Independent
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Framework :: Zope3

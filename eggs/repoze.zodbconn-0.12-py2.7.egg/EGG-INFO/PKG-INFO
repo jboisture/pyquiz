@@ -1,0 +1,189 @@
+Metadata-Version: 1.0
+Name: repoze.zodbconn
+Version: 0.12
+Summary: Opens ZODB by URI and provides ZODB-related WSGI apps
+Home-page: http://www.repoze.org
+Author: Chris McDonough, Agendaless Consulting / Shane Hathaway
+Author-email: repoze-dev@lists.repoze.org
+License: BSD-derived (http://www.repoze.org/LICENSE.txt)
+Description: =================
+         repoze.zodbconn
+        =================
+        
+        A lbrary which allows `ZODB <http://zodb.org>`_ databases to be
+        constructed from URI specifications.
+        
+        Read the latest documentation at `http://docs.repoze.org/zodbconn/
+        <http://docs.repoze.org/zodbconn/>`_.
+        
+        
+        
+        
+        0.12 (2010-06-25)
+        =================
+        
+        - PersistentApplicationFinder: More eagerly open the database at
+          startup time in order to avoid race condition where many
+          simultaneous requests directly after startup might cause the
+          database to be created more than once.
+        
+        0.11 (2010-04-26)
+        =================
+        
+        - Made the URI resolver compatible with changes to Python's ``urlparse``
+          module in Python 2.6.5 (tests all pass now on Python 2.4.6, 2.5.5,
+          and 2.6.5).  Thanks to Fergus Doyle for the patch.
+        
+        - In the connector middleware, abort the transaction before closing
+          the connection, to avoid an exception that would lead to leaked
+          connections.
+        
+        - The ZConfig file parser now allows a config file to define multiple
+          databases.
+        
+        0.10 (2009-06-24)
+        =================
+        
+        - Added a ``zconfig`` URI parser, providing basic support for any
+          kind of storage that ZODB can load via ZConfig.
+        
+        - Added a ``db_from_uri`` function, which is simpler to use than
+          ``dbfactory_from_uri``; ``db_from_uri`` also supports
+          multi-databases.  Replaced references in the documentation.
+        
+        - Added ``connector``, a WSGI framework component that connects to ZODB
+          and puts the connection in the WSGI environment. It unconditionally
+          closes the ZODB connection on exit.
+        
+        - ``PersistentApplicationFinder`` now gets the ZODB connection
+          from the WSGI environment whenever it is provided.
+        
+        - Moved ``db_from_uri`` and ``dbfactory_from_uri`` to a module
+          named ``uri``, to avoid circular imports.
+        
+        - Added ``cachecleanup``, a WSGI framework component that keeps only
+          objects of certain classes in the ZODB cache. This helps control
+          memory consumption.
+        
+        - Added ``transferlog``, a WSGI framework component that logs
+          how many ZODB objects were loaded and stored per request.
+        
+        0.9.1 (2009-06-12)
+        ==================
+        
+        - The ``EnvironmentDeleterMiddleware`` (the "closer") middleware did
+          not delete the environment key if the application raised an
+          exception, potentially causing connection leakage for applications
+          that depended upon it doing so.
+        
+        0.9 (2009-06-09)
+        ================
+        
+        Features
+        --------
+        
+        - Added a ``LoggingCleanup`` implementation which can be passed to
+          ``PersistentApplicationFinder``:  it logs counts of loaded and saved
+          objects for the connection between the time it is instantiated (i.e.,
+          whe the database connection is opened) and the time the connection is
+          closed.  See the "Customizing Connection Cleanup" section in the narrative
+          docs for notes on using this feature.
+        
+        - Added ``cleanup`` argument to constructor of ``PersistentApplicationFinder``,
+          to allow applications to register a custom cleanup object factory.
+          See the "Customizing Connection Cleanup" section in the narrative docs
+          for notes on using this feature.
+        
+        - 100% unit test coverage.
+        
+        Bug Fixes
+        ---------
+        
+        - Fixed breakage with ``file:`` URIs having no query string.
+        
+        0.8 (2009-05-25)
+        ================
+        
+        Features
+        --------
+        
+        Fix a bug in FileStorageURIResolver whereby fully-qualified paths to
+        Windows files (e.g. ``file://C:\foo\bar\baz?a=1``) were parsed
+        incorrectly, resulting in a bogus file location.
+        
+        0.7 (2009-04-23)
+        ================
+        
+        Features
+        --------
+        
+        Added support for multi-databases in PersistentApplicationFinder.
+        Just pass multiple URIs to the constructor, either as a list of
+        strings or a single string with URIs separated by whitespace. Each
+        database must have a distinct database_name. The first URI specifies
+        the root database.
+        
+        0.6 (2008-01-06)
+        ================
+        
+        Backwards Incompatibilities
+        ----------------------------
+        
+        ``dbfactory_from_uri`` now returns only a single argument (the
+        factory).
+        
+        Features
+        --------
+        
+        Docs updated with argument values for ``file://`` and ``zeo://`` URI
+        schemes; this file converted to real REST.
+        
+        0.5 (unknown)
+        =============
+        
+        Pass ``layout`` to BlobStorage as a kwarg explicitly (for forward
+        compatibility).
+        
+        Depend on ZODB3 3.8.1+.
+        
+        0.4 (unknown)
+        =============
+        
+        Add ``connection_cache_size``, ``connection_pool_size``, and
+        ``database_name`` arguments to both FileStorage and ClientStorage URI
+        resolver schemes.  ``connection_cache_size`` represents the ZODB
+        object cache size (the ``cache_size`` parameter to the DB
+        constructor), ``connection_pool_size`` represents the ZODB connection
+        pool size (the ``pool_size`` parameter to the DB constructor), and
+        ``database_name`` represents the ZODB database name (the
+        ``database_name`` parameter to the DB constructor).
+        ``connection_cache_size`` defaults to 10000 (overriding the too-low DB
+        constructor default of 400), ``connection_pool_size`` defaults to 7,
+        and ``database_name`` defaults to ``unnamed``.
+        
+        0.3 (unknown)
+        =============
+        
+        Add 'egg:repoze.zodbconn#closer' middleware.
+        
+        Add blobstorage and demostorage support to zeo and file resolvers.
+        
+        0.2 (unknown)
+        =============
+        
+        Unknown changes
+        
+        0.1 (unknown)
+        =============
+        
+        Initial release.
+        
+        
+Keywords: wsgi zope zodb database
+Platform: UNKNOWN
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python
+Classifier: Topic :: Database
+Classifier: Topic :: Internet :: WWW/HTTP
+Classifier: Topic :: Internet :: WWW/HTTP :: WSGI

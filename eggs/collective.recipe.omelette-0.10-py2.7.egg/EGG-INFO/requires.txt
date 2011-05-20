@@ -1,0 +1,8 @@
+setuptools
+zc.buildout
+zc.recipe.egg
+
+[tests]
+zope.testing
+zc.buildout>=1.5.2
+zc.recipe.egg

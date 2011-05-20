@@ -1,0 +1,296 @@
+Metadata-Version: 1.0
+Name: collective.recipe.omelette
+Version: 0.10
+Summary: Creates a unified directory structure of installed packages, symlinking to the actual contents, in order to ease navigation.
+Home-page: http://pypi.python.org/pypi/collective.recipe.omelette
+Author: David Glick, Groundwire
+Author-email: davidglick@groundwire.org
+License: GPL
+Description: Detailed Documentation
+        **********************
+        
+        Introduction
+        ============
+        
+        Namespace packages offer the huge benefit of being able to distribute parts of a large
+        system in small, self-contained pieces.  However, they can be somewhat clunky to navigate,
+        since you end up with a large list of eggs in your egg cache, and then a seemingly endless
+        series of directories you need to open to actually find the contents of your egg.
+        
+        This recipe sets up a directory structure that mirrors the actual python namespaces, with
+        symlinks to the egg contents.  So, instead of this...::
+        
+            egg-cache/
+                my.egg.one-1.0-py2.4.egg/
+                    my/
+                        egg/
+                            one/
+                                (contents of first egg)
+                my.egg.two-1.0-py2.4.egg/
+                    my/
+                        egg/
+                            two/
+                                (contents of second egg)
+        
+        ...you get this::
+        
+            omelette/
+                my/
+                    egg/
+                        one/
+                            (contents of first egg)
+                        two/
+                            (contents of second egg)
+        
+        
+        You can also include non-eggified python packages in the omelette.  This makes it simple to
+        get a single path that you can add to your PYTHONPATH for use with specialized python environments
+        like when running under mod_wsgi or PyDev.
+        
+        
+        Typical usage with Zope and Plone
+        =================================
+        
+        For a typical Plone buildout, with a part named "instance" that uses the plone.recipe.zope2instance recipe and a
+        part named "zope2" that uses the plone.recipe.zope2install recipe, the following additions to buildout.cfg will
+        result in an omelette including all eggs and old-style Products used by the Zope instance as well as all of the
+        packages from Zope's lib/python. It is important that omelette come last if you want it to find everything::
+        
+            [buildout]
+            parts =
+                ...(other parts)...
+                omelette
+                
+            ...
+                
+            [omelette]
+            recipe = collective.recipe.omelette
+            eggs = ${instance:eggs}
+            products = ${instance:products}
+            packages = ${zope2:location}/lib/python ./
+            
+        (Note: If your instance part lacks a 'products' variable, omit it from the omelette section as well, or
+        the omelette will silently fail to build.)
+        
+            
+        Supported options
+        =================
+        
+        The recipe supports the following options:
+        
+        eggs
+            List of eggs which should be included in the omelette.
+        
+        location
+            (optional) Override the directory in which the omelette is created (default is parts/[name of buildout part])
+        
+        ignore-develop
+            (optional) Ignore eggs that you are currently developing (listed in ${buildout:develop}). Default is False
+        
+        ignores
+            (optional) List of eggs to ignore when preparing your omelette.
+        
+        packages
+            List of Python packages whose contents should be included in the omelette.  Each line should be in the format
+            [package_location] [target_directory], where package_location is the real location of the package, and
+            target_directory is the (relative) location where the package should be inserted into the omelette (defaults
+            to top level).
+        
+        products
+            (optional) List of old Zope 2-style products directories whose contents should be included in the omelette,
+            one per line.  (For backwards-compatibility -- equivalent to using packages with Products as the target
+            directory.)
+        
+        
+        Windows support
+        ===============
+        
+        Using omelette on Windows requires the junction_ utility to make links.  Junction.exe must be present in
+        your PATH when you run omelette.
+        
+        .. _junction: http://www.microsoft.com/technet/sysinternals/fileanddisk/junction.mspx
+        
+        
+        Using omelette with eggtractor
+        ==============================
+        
+        Mustapha Benali's buildout.eggtractor_ provides a handy way for buildout to automatically find
+        development eggs without having to edit buildout.cfg.  However, if you use it, the omelette recipe
+        won't be aware of your eggs unless you a) manually add them to the omelette part's eggs option, or
+        b) add the name of the omelette part to the buildout part's tractor-target-parts option.
+        
+        .. _buildout.eggtractor: http://pypi.python.org/pypi/buildout.eggtractor/
+        
+        
+        Using omelette with zipped eggs
+        ===============================
+        
+        Omelette doesn't currently know how to deal with eggs that are zipped.  If it encounters one, you'll
+        see a warning something like the following::
+        
+            omelette: Warning: (While processing egg elementtree) Egg contents not found at
+            /Users/davidg/.buildout/eggs/elementtree-1.2.7_20070827_preview-py2.4.egg/elementtree.  Skipping.
+        
+        You can tell buildout to unzip all eggs by setting the unzip = true flag in the [buildout] section.
+        (Note that this will only take effect for eggs downloaded after the flag is set.)
+        
+        
+        Running the tests
+        =================
+        
+        Just grab the recipe from svn and run::
+        
+            python2.4 setup.py test
+        
+        Known issue: The tests run buildout in a separate process, so it's currently
+        impossible to put a pdb breakpoint in the recipe and debug during the test.
+        If you need to do this, set up another buildout which installs an omelette
+        part and includes collective.recipe.omelette as a development egg.
+        
+        
+        Reporting bugs or asking questions
+        ==================================
+        
+        There is a shared bugtracker and help desk on Launchpad:
+        https://bugs.launchpad.net/collective.buildout/
+        
+        Change history
+        **************
+        
+        0.10 (2010-11-22)
+        =================
+        
+         - Provide an update function (equivalent to install) to avoid spurious "recipe
+           "doesn't define an update method" warning.
+           [davisagli]
+        
+         - Print a warning rather than aborting the buildout if junction.exe is missing
+           on Windows.
+           [davisagli]
+        
+         - Made the tests compatible with a zc.buildout installed with Distribute rather
+           than Setuptools.
+           [pumazi]
+        
+         - Handle OSErrors on symlink and warn the user. MacOSX can raise OSError due to
+           an existing file here even if os.path.exists returns False.
+           [MatthewWilkes]
+        
+         - Include modules from namespace packages in the omelette. (Namespace packages
+           cannot define anything in __init__.py, but they can contain modules.)
+           [hathawsh]
+        
+         - Made the tests compatible with virtualenv.
+           [hathawsh]
+        
+        0.9 (2009-04-11)
+        ================
+        
+         - Adjusted log-levels to be slightly less verbose for non-critical
+           errors. [malthe]
+        
+        0.8 (2009-01-14)
+        ================
+        
+         - Fixed 'OSError [Errno 20] Not a directory' on zipped eggs, for
+           example when adding the z3c.sqlalchemy==1.3.5 egg.
+           [maurits]
+        
+        0.7 (2008-09-10)
+        ================
+        
+         - Actually add namespace declarations to generated __init__.py files.
+           [davisagli]
+        
+         - Use egg-info instead of guessing paths from package name. This also fixes
+           eggs which have a name different from the contents.
+           [fschulze]
+        
+        
+        0.6 (2008-08-11)
+        ================
+        
+         - Documentation changes only.
+           [davisagli]
+        
+        
+        0.5 (2008-05-29)
+        ================
+        
+         - Added uninstall entry point so that the omelette can be uninstalled on Windows without
+           clobbering things outside the omelette path.
+           [optilude]
+        
+         - Support Windows using NTFS junctions (see http://www.microsoft.com/technet/sysinternals/FileAndDisk/Junction.mspx)
+           [optilude]
+        
+         - Ignore zipped eggs and fakezope2eggs-created links.
+           [davisagli]
+        
+         - Added 'packages' option to allow merging non-eggified Python packages to any directory in the omelette
+           (so that, for instance, the contents of Zope's lib/python can be merged flexibly).
+           [davisagli]
+        
+        
+        0.4 (2008-04-07)
+        ================
+        
+         - Added option to include Products directories.
+           [davisagli]
+        
+         - Fixed ignore-develop option.
+           [davisagli]
+        
+        
+        0.3 (2008-03-30)
+        ================
+        
+         - Fixed test infrastructure.
+           [davisagli]
+        
+         - Added option to ignore develop eggs
+           [claytron]
+        
+         - Added option to ignore eggs
+           [claytron]
+        
+         - Added option to override the default omelette location.
+           [davisagli]
+        
+        
+        0.2 (2008-03-16)
+        ================
+        
+         - Fixed so created directories are not normalized to lowercase.
+           [davisagli]
+        
+        
+        0.1 (2008-03-10)
+        ================
+        
+         - Initial basic implementation.
+           [davisagli]
+        
+         - Created recipe with ZopeSkel.
+           [davisagli]
+        
+        Contributors
+        ************
+        
+         - David Glick [davisagli]
+         - Clayton Parker [claytron]
+         - Martin Aspeli [optilude]
+         - Florian Schulze [fschulze]
+         - Maurits van Rees [maurits]
+         - Malthe Borch [malthe]
+         - Matthew Wilkes [MatthewWilkes]
+         - Michael Mulich [pumazi]
+         - Shane Hathaway [hathawsh]
+         
+Keywords: buildout eggs namespace
+Platform: UNKNOWN
+Classifier: Framework :: Buildout
+Classifier: Intended Audience :: Developers
+Classifier: Topic :: Software Development :: Build Tools
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: License :: OSI Approved :: GNU General Public License (GPL)

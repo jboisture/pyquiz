@@ -1,0 +1,6 @@
+[zc.buildout]
+default = collective.recipe.omelette:Recipe
+
+[zc.buildout.uninstall]
+default = collective.recipe.omelette:uninstall
+

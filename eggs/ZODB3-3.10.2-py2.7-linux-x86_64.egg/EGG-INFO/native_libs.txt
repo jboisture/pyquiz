@@ -1,0 +1,13 @@
+persistent/cPersistence.so
+persistent/cPickleCache.so
+persistent/TimeStamp.so
+BTrees/_OIBTree.so
+BTrees/_fsBTree.so
+BTrees/_LLBTree.so
+BTrees/_LFBTree.so
+BTrees/_OLBTree.so
+BTrees/_LOBTree.so
+BTrees/_OOBTree.so
+BTrees/_IOBTree.so
+BTrees/_IFBTree.so
+BTrees/_IIBTree.so

@@ -1,0 +1,7 @@
+zope.i18nmessageid
+zope.interface
+zope.schema
+setuptools
+
+[test]
+zope.testing

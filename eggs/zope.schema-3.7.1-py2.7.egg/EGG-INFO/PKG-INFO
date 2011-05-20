@@ -1,0 +1,901 @@
+Metadata-Version: 1.0
+Name: zope.schema
+Version: 3.7.1
+Summary: zope.interface extension for defining data schemas
+Home-page: http://pypi.python.org/pypi/zope.schema
+Author: Zope Foundation and Contributors
+Author-email: zope-dev@zope.org
+License: ZPL 2.1
+Description: ==============
+        Zope 3 Schemas
+        ==============
+        
+        Introduction
+        ------------
+        
+        *This package is intended to be independently reusable in any Python
+        project. It is maintained by the* `Zope Toolkit project <http://docs.zope.org/zopetoolkit/>`_.
+        
+        Schemas extend the notion of interfaces to detailed descriptions of Attributes
+        (but not methods). Every schema is an interface and specifies the public
+        fields of an object. A *field* roughly corresponds to an attribute of a
+        python object. But a Field provides space for at least a title and a
+        description. It can also constrain its value and provide a validation method.
+        Besides you can optionally specify characteristics such as its value being
+        read-only or not required.
+        
+        Zope 3 schemas were born when Jim Fulton and Martijn Faassen thought
+        about Formulator for Zope 3 and ``PropertySets`` while at the `Zope 3
+        sprint`_ at the Zope BBQ in Berlin. They realized that if you strip
+        all view logic from forms then you have something similar to interfaces. And
+        thus schemas were born.
+        
+        .. _Zope 3 sprint: http://dev.zope.org/Zope3/ZopeBBQ2002Sprint
+        
+        .. contents::
+        
+        Simple Usage
+        ------------
+        
+        Let's have a look at a simple example. First we write an interface as usual,
+        but instead of describing the attributes of the interface with ``Attribute``
+        instances, we now use schema fields:
+        
+          >>> import zope.interface
+          >>> import zope.schema
+        
+          >>> class IBookmark(zope.interface.Interface):
+          ...     title = zope.schema.TextLine(
+          ...         title=u'Title',
+          ...         description=u'The title of the bookmark',
+          ...         required=True)
+          ...
+          ...     url = zope.schema.URI(
+          ...         title=u'Bookmark URL',
+          ...         description=u'URL of the Bookmark',
+          ...         required=True)
+          ...
+        
+        Now we create a class that implements this interface and create an instance of
+        it:
+        
+          >>> class Bookmark(object):
+          ...     zope.interface.implements(IBookmark)
+          ...
+          ...     title = None
+          ...     url = None
+        
+          >>> bm = Bookmark()
+        
+        We would now like to only add validated values to the class. This can be done
+        by first validating and then setting the value on the object. The first step
+        is to define some data:
+        
+          >>> title = u'Zope 3 Website'
+          >>> url = 'http://dev.zope.org/Zope3'
+        
+        Now we, get the fields from the interface:
+        
+          >>> title_field = IBookmark.get('title')
+          >>> url_field = IBookmark.get('url')
+        
+        Next we have to bind these fields to the context, so that instance-specific
+        information can be used for validation:
+        
+          >>> title_bound = title_field.bind(bm)
+          >>> url_bound = url_field.bind(bm)
+        
+        Now that the fields are bound, we can finally validate the data:
+        
+          >>> title_bound.validate(title)
+          >>> url_bound.validate(url)
+        
+        If the validation is successful, ``None`` is returned. If a validation error
+        occurs a ``ValidationError`` will be raised; for example:
+        
+          >>> url_bound.validate(u'http://zope.org/foo')
+          Traceback (most recent call last):
+          ...
+          WrongType: (u'http://zope.org/foo', <type 'str'>, 'url')
+        
+          >>> url_bound.validate('foo.bar')
+          Traceback (most recent call last):
+          ...
+          InvalidURI: foo.bar
+        
+        Now that the data has been successfully validated, we can set it on the
+        object:
+        
+          >>> title_bound.set(bm, title)
+          >>> url_bound.set(bm, url)
+        
+        That's it. You still might think this is a lot of work to validate and set a
+        value for an object. Note, however, that it is very easy to write helper
+        functions that automate these tasks. If correctly designed, you will never
+        have to worry explicitly about validation again, since the system takes care
+        of it automatically.
+        
+        
+        What is a schema, how does it compare to an interface?
+        ------------------------------------------------------
+        
+        A schema is an extended interface which defines fields.  You can validate that
+        the attributes of an object conform to their fields defined on the schema.
+        With plain interfaces you can only validate that methods conform to their
+        interface specification.
+        
+        So interfaces and schemas refer to different aspects of an object
+        (respectively its code and state).
+        
+        A schema starts out like an interface but defines certain fields to
+        which an object's attributes must conform.  Let's look at a stripped
+        down example from the programmer's tutorial:
+        
+            >>> import re
+        
+            >>> class IContact(zope.interface.Interface):
+            ...     """Provides access to basic contact information."""
+            ...
+            ...     first = zope.schema.TextLine(title=u"First name")
+            ...
+            ...     last = zope.schema.TextLine(title=u"Last name")
+            ...
+            ...     email = zope.schema.TextLine(title=u"Electronic mail address")
+            ...
+            ...     address = zope.schema.Text(title=u"Postal address")
+            ...
+            ...     postalCode = zope.schema.TextLine(
+            ...         title=u"Postal code",
+            ...         constraint=re.compile("\d{5,5}(-\d{4,4})?$").match)
+        
+        ``TextLine`` is a field and expresses that an attribute is a single line
+        of Unicode text.  ``Text`` expresses an arbitrary Unicode ("text")
+        object.  The most interesting part is the last attribute
+        specification.  It constrains the ``postalCode`` attribute to only have
+        values that are US postal codes.
+        
+        Now we want a class that adheres to the ``IContact`` schema:
+        
+            >>> class Contact(object):
+            ...     zope.interface.implements(IContact)
+            ...
+            ...     def __init__(self, first, last, email, address, pc):
+            ...         self.first = first
+            ...         self.last = last
+            ...         self.email = email
+            ...         self.address = address
+            ...         self.postalCode = pc
+        
+        Now you can see if an instance of ``Contact`` actually implements the
+        schema:
+        
+            >>> someone = Contact(u'Tim', u'Roberts', u'tim@roberts', u'',
+            ...                   u'12032-3492')
+        
+            >>> for field in zope.schema.getFields(IContact).values():
+            ...     bound = field.bind(someone)
+            ...     bound.validate(bound.get(someone))
+        
+        
+        Data Modeling Concepts
+        -----------------------
+        
+        The ``zope.schema`` package provides a core set of field types,
+        including single- and multi-line text fields, binary data fields,
+        integers, floating-point numbers, and date/time values.
+        
+        Selection issues; field type can specify:
+        
+        - "Raw" data value
+        
+          Simple values not constrained by a selection list.
+        
+        - Value from enumeration (options provided by schema)
+        
+          This models a single selection from a list of possible values
+          specified by the schema.  The selection list is expected to be the
+          same for all values of the type.  Changes to the list are driven by
+          schema evolution.
+        
+          This is done by mixing-in the ``IEnumerated`` interface into the field
+          type, and the Enumerated mix-in for the implementation (or emulating
+          it in a concrete class).
+        
+        - Value from selection list (options provided by an object)
+        
+          This models a single selection from a list of possible values
+          specified by a source outside the schema.  The selection list
+          depends entirely on the source of the list, and may vary over time
+          and from object to object.  Changes to the list are not related to
+          the schema, but changing how the list is determined is based on
+          schema evolution.
+        
+          There is not currently a spelling of this, but it could be
+          facilitated using alternate mix-ins similar to IEnumerated and
+          Enumerated.
+        
+        - Whether or not the field is read-only
+        
+          If a field value is read-only, it cannot be changed once the object is
+          created.
+        
+        - Whether or not the field is required
+        
+          If a field is designated as required, assigned field values must always
+          be non-missing. See the next section for a description of missing values.
+        
+        - A value designated as ``missing``
+        
+          Missing values, when assigned to an object, indicate that there is 'no
+          data' for that field. Missing values are analogous to null values in
+          relational databases. For example, a boolean value can be True, False, or
+          missing, in which case its value is unknown.
+        
+          While Python's None is the most likely value to signify 'missing', some
+          fields may use different values. For example, it is common for text fields
+          to use the empty string ('') to signify that a value is missing. Numeric
+          fields may use 0 or -1 instead of None as their missing value.
+        
+          A field that is 'required' signifies that missing values are invalid and
+          should not be assigned.
+        
+        - A default value
+        
+          Default field values are assigned to objects when they are first created.
+        
+        
+        Fields and Widgets
+        ------------------
+        
+        Widgets are components that display field values and, in the case of
+        writable fields, allow the user to edit those values.
+        
+        Widgets:
+        
+        - Display current field values, either in a read-only format, or in a
+          format that lets the user change the field value.
+        
+        - Update their corresponding field values based on values provided by users.
+        
+        - Manage the relationships between their representation of a field value
+          and the object's field value. For example, a widget responsible for
+          editing a number will likely represent that number internally as a string.
+          For this reason, widgets must be able to convert between the two value
+          formats. In the case of the number-editing widget, string values typed
+          by the user need to be converted to numbers such as int or float.
+        
+        - Support the ability to assign a missing value to a field. For example,
+          a widget may present a ``None`` option for selection that, when selected,
+          indicates that the object should be updated with the field's ``missing``
+          value.
+        
+        
+        
+        References
+        ----------
+        
+        - Use case list, http://dev.zope.org/Zope3/Zope3SchemasUseCases
+        
+        - Documented interfaces, zope/schema/interfaces.py
+        
+        - Jim Fulton's Programmers Tutorial; in CVS:
+          Docs/ZopeComponentArchitecture/PythonProgrammerTutorial/Chapter2
+        
+        
+        ======
+        Fields
+        ======
+        
+        This document highlights unusual and subtle aspects of various fields and
+        field classes, and is not intended to be a general introduction to schema
+        fields.  Please see README.txt for a more general introduction.
+        
+        While many field types, such as Int, TextLine, Text, and Bool are relatively
+        straightforward, a few have some subtlety.  We will explore the general
+        class of collections and discuss how to create a custom creation field; discuss
+        Choice fields, vocabularies, and their use with collections; and close with a
+        look at the standard zope.app approach to using these fields to find views
+        ("widgets").
+        
+        Collections
+        -----------
+        
+        Normal fields typically describe the API of the attribute -- does it behave as a
+        Python Int, or a Float, or a Bool -- and various constraints to the model, such
+        as a maximum or minimum value.  Collection fields have additional requirements
+        because they contain other types, which may also be described and constrained.
+        
+        For instance, imagine a list that contains non-negative floats and enforces
+        uniqueness. In a schema, this might be written as follows:
+        
+          >>> from zope.interface import Interface
+          >>> from zope.schema import List, Float
+          >>> class IInventoryItem(Interface):
+          ...     pricePoints = List(
+          ...         title=u"Price Points",
+          ...         unique=True,
+          ...         value_type=Float(title=u"Price", min=0.0)
+          ...     )
+        
+        This indicates several things.
+        
+        - pricePoints is an attribute of objects that implement IInventoryItem.
+        - The contents of pricePoints can be accessed and manipulated via a Python list
+          API.
+        - Each member of pricePoints must be a non-negative float.
+        - Members cannot be duplicated within pricePoints: each must be must be unique.
+        - The attribute and its contents have descriptive titles.  Typically these
+          would be message ids.
+        
+        This declaration creates a field that implements a number of interfaces, among
+        them these:
+        
+          >>> from zope.schema.interfaces import IList, ISequence, ICollection
+          >>> IList.providedBy(IInventoryItem['pricePoints'])
+          True
+          >>> ISequence.providedBy(IInventoryItem['pricePoints'])
+          True
+          >>> ICollection.providedBy(IInventoryItem['pricePoints'])
+          True
+        
+        Creating a custom collection field
+        ----------------------------------
+        
+        Ideally, custom collection fields have interfaces that inherit appropriately
+        from either zope.schema.interfaces.ISequence or
+        zope.schema.interfaces.IUnorderedCollection.  Most collection fields should be
+        able to subclass zope.schema._field.AbstractCollection to get the necessary
+        behavior.  Notice the behavior of the Set field in zope.schema._field: this
+        would also be necessary to implement a Bag.
+        
+        Choices and Vocabularies
+        ------------------------
+        
+        Choice fields are the schema way of spelling enumerated fields and more.  By
+        providing a dynamically generated vocabulary, the choices available to a
+        choice field can be contextually calculated.  
+        
+        Simple choices do not have to explicitly use vocabularies:
+        
+          >>> from zope.schema import Choice
+          >>> f = Choice((640, 1028, 1600))
+          >>> f.validate(640)
+          >>> f.validate(960)
+          Traceback (most recent call last):
+          ...
+          ConstraintNotSatisfied: 960
+          >>> f.validate('bing')
+          Traceback (most recent call last):
+          ...
+          ConstraintNotSatisfied: bing
+        
+        More complex choices will want to use registered vocabularies.  Vocabularies
+        have a simple interface, as defined in
+        zope.schema.interfaces.IBaseVocabulary.  A vocabulary must minimally be able
+        to determine whether it contains a value, to create a term object for a value,
+        and to return a query interface (or None) to find items in itself.  Term
+        objects are an abstraction that wraps a vocabulary value.  
+        
+        The Zope application server typically needs a fuller interface that provides
+        "tokens" on its terms: ASCII values that have a one-to-one relationship to the
+        values when the vocabulary is asked to "getTermByToken".  If a vocabulary is
+        small, it can also support the IIterableVocabulary interface.
+        
+        If a vocabulary has been registered, then the choice merely needs to pass the
+        vocabulary identifier to the "vocabulary" argument of the choice during
+        instantiation.
+        
+        A start to a vocabulary implementation that may do all you need for many simple
+        tasks may be found in zope.schema.vocabulary.SimpleVocabulary.  Because
+        registered vocabularies are simply callables passed a context, many
+        registered vocabularies can simply be functions that rely on SimpleVocabulary:
+        
+          >>> from zope.schema.vocabulary import SimpleVocabulary
+          >>> def myDynamicVocabulary(context):
+          ...     v = dynamic_context_calculation_that_returns_an_iterable(context)
+          ...     return SimpleVocabulary.fromValues(v)
+          ... 
+        
+        The vocabulary interface is simple enough that writing a custom vocabulary is
+        not too difficult itself.
+        
+        Choices and Collections
+        -----------------------
+        
+        Choices are a field type and can be used as a value_type for collections.  Just
+        as a collection of an "Int" value_type constrains members to integers, so a
+        choice-based value type constrains members to choices within the Choice's
+        vocabulary.  Typically in the Zope application server widgets are found not
+        only for the collection and the choice field but also for the vocabulary on
+        which the choice is based.
+        
+        Using Choice and Collection Fields within a Widget Framework
+        ------------------------------------------------------------
+        
+        While fields support several use cases, including code documentation and data
+        description and even casting, a significant use case influencing their design is
+        to support form generation -- generating widgets for a field.  Choice and
+        collection fields are expected to be used within widget frameworks.  The
+        zope.app approach typically (but configurably) uses multiple dispatches to 
+        find widgets on the basis of various aspects of the fields.
+        
+        Widgets for all fields are found by looking up a browser view of the field
+        providing an input or display widget view.  Typically there is only a single
+        "widget" registered for Choice fields.  When it is looked up, it performs
+        another dispatch -- another lookup -- for a widget registered for both the field
+        and the vocabulary.  This widget typically has enough information to render
+        without a third dispatch.
+        
+        Collection fields may fire several dispatches.  The first is the usual lookup
+        by field.  A single "widget" should be registered for ICollection, which does
+        a second lookup by field and value_type constraint, if any, or, theoretically,
+        if value_type is None, renders some absolutely generic collection widget that
+        allows input of any value imaginable: a check-in of such a widget would be
+        unexpected.  This second lookup may find a widget that knows how to render,
+        and stop.  However, the value_type may be a choice, which will usually fire a
+        third dispatch: a search for a browser widget for the collection field, the
+        value_type field, and the vocabulary.  Further lookups may even be configured
+        on the basis of uniqueness and other constraints.
+        
+        This level of indirection may be unnecessary for some applications, and can be
+        disabled with simple ZCML changes within `zope.app`.
+        
+        
+        =======
+        Sources
+        =======
+        
+        Concepts
+        --------
+        
+        Sources are designed with three concepts:
+        
+        - The source itself - an iterable
+        
+          This can return any kind of object it wants. It doesn't have to care
+          for browser representation, encoding, ...
+        
+        - A way to map a value from the iterable to something that can be used
+          for form *values* - this is called a token. A token is commonly a
+          (unique) 7bit representation of the value.
+        
+        - A way to map a value to something that can be displayed to the user -
+          this is called a title
+        
+        The last two elements are dispatched using a so called `term`. The
+        ITitledTokenizedTerm interface contains a triple of (value, token, title).
+        
+        Additionally there are some lookup functions to perform the mapping
+        between values and terms and tokens and terms.
+        
+        Sources that require context use a special factory: a context source
+        binder that is called with the context and instanciates the source when
+        it is actually used.
+        
+        Sources in Fields
+        -----------------
+        
+        A choice field can be constructed with a source or source name.  When a source
+        is used, it will be used as the source for valid values.
+        
+        Create a source for all odd numbers.
+        
+            >>> from zope import interface
+            >>> from zope.schema.interfaces import ISource, IContextSourceBinder
+            >>> class MySource(object):
+            ...     interface.implements(ISource)
+            ...     divisor = 2
+            ...     def __contains__(self, value):
+            ...         return bool(value % self.divisor)
+            >>> my_source = MySource()
+            >>> 1 in my_source
+            True
+            >>> 2 in my_source
+            False
+        
+            >>> from zope.schema import Choice
+            >>> choice = Choice(__name__='number', source=my_source)
+            >>> bound = choice.bind(object())
+            >>> bound.vocabulary
+            <...MySource...>
+        
+        If a IContextSourceBinder is passed as the `source` argument to Choice, it's
+        `bind` method will be called with the context as its only argument.   The
+        result must implement ISource and will be used as the source.
+        
+            >>> def my_binder(context):
+            ...     print "Binder was called."
+            ...     source = MySource()
+            ...     source.divisor = context.divisor
+            ...     return source
+            >>> interface.directlyProvides(my_binder, IContextSourceBinder)
+        
+            >>> class Context(object):
+            ...     divisor = 3
+        
+            >>> choice = Choice(__name__='number', source=my_binder)
+            >>> bound = choice.bind(Context())
+            Binder was called.
+            >>> bound.vocabulary
+            <...MySource...>
+            >>> bound.vocabulary.divisor
+            3
+        
+        When using IContextSourceBinder together with default value, it's
+        impossible to validate it on field initialization. Let's check if
+        initalization doesn't fail in that case.
+        
+            >>> choice = Choice(__name__='number', source=my_binder, default=2)
+        
+            >>> bound = choice.bind(Context())
+            Binder was called.
+        
+            >>> bound.validate(bound.default)
+            >>> bound.validate(3)
+            Traceback (most recent call last):
+            ...
+            ConstraintNotSatisfied: 3
+        
+        It's developer's responsibility to provide a default value that fits the
+        constraints when using context-based sources.
+        
+        
+        =================
+        Schema Validation
+        =================
+        
+        There are two helper methods to verify schemas and interfaces:
+        
+        getValidationErrors
+            first validates via the zope.schema field validators. If that succeeds the
+            invariants are checked.
+        getSchemaValidationErrors
+            *only* validateds via the zope.schema field validators. The invariants are
+            *not* checked.
+        
+        
+        Create an interface to validate against:
+        
+          >>> import zope.interface
+          >>> import zope.schema
+          >>> class ITwoInts(zope.interface.Interface):
+          ...     a = zope.schema.Int(max=10)
+          ...     b = zope.schema.Int(min=5)
+          ...
+          ...     @zope.interface.invariant
+          ...     def a_greater_b(obj):
+          ...         print "Checking if a > b"
+          ...         if obj.a <= obj.b:
+          ...             raise zope.interface.Invalid("%s<=%s" % (obj.a, obj.b))
+          ...     
+        
+        Create a silly model:
+        
+          >>> class TwoInts(object):
+          ...     pass
+        
+        Create an instance of TwoInts but do not set attributes. We get two errors:
+        
+          >>> ti = TwoInts()
+          >>> r = zope.schema.getValidationErrors(ITwoInts, ti)
+          >>> r.sort()
+          >>> r
+          [('a', SchemaNotFullyImplemented(...AttributeError...)),
+           ('b', SchemaNotFullyImplemented(...AttributeError...))]
+          >>> r[0][1].args[0].args
+          ("'TwoInts' object has no attribute 'a'",)
+          >>> r[1][1].args[0].args
+          ("'TwoInts' object has no attribute 'b'",)
+        
+        The `getSchemaValidationErrors` function returns the same result:
+        
+          >>> r = zope.schema.getSchemaValidationErrors(ITwoInts, ti)
+          >>> r.sort()
+          >>> r
+          [('a', SchemaNotFullyImplemented(...AttributeError...)),
+           ('b', SchemaNotFullyImplemented(...AttributeError...))]
+          >>> r[0][1].args[0].args
+          ("'TwoInts' object has no attribute 'a'",)
+          >>> r[1][1].args[0].args
+          ("'TwoInts' object has no attribute 'b'",)
+         
+        Note that see no error from the invariant because the invariants are not
+        vaildated if there are other schema errors.
+        
+        When we set a valid value for `a` we still get the same error for `b`:
+        
+          >>> ti.a = 11
+          >>> errors = zope.schema.getValidationErrors(ITwoInts, ti)
+          >>> errors.sort()
+          >>> errors
+          [('a', TooBig(11, 10)),
+           ('b', SchemaNotFullyImplemented(...AttributeError...))]
+          >>> errors[1][1].args[0].args
+          ("'TwoInts' object has no attribute 'b'",)
+        
+          >>> errors[0][1].doc()
+          u'Value is too big'
+        
+        
+        After setting a valid value for `a` there is only the error for the missing `b`
+        left:
+        
+          >>> ti.a = 8
+          >>> r = zope.schema.getValidationErrors(ITwoInts, ti)
+          >>> r
+          [('b', SchemaNotFullyImplemented(...AttributeError...))]
+          >>> r[0][1].args[0].args
+          ("'TwoInts' object has no attribute 'b'",)
+        
+        
+        After setting valid value for `b` the schema is valid so the invariants are
+        checked. As `b>a` the invariant fails:
+        
+          >>> ti.b = 10
+          >>> errors = zope.schema.getValidationErrors(ITwoInts, ti)
+          Checking if a > b
+          >>> errors
+          [(None, <zope.interface.exceptions.Invalid instance at 0x...>)]
+        
+        
+        When using `getSchemaValidationErrors` we do not get an error any more:
+        
+          >>> zope.schema.getSchemaValidationErrors(ITwoInts, ti)
+          []
+        
+        
+        Set `b=5` so everything is fine:
+        
+          >>> ti.b = 5
+          >>> zope.schema.getValidationErrors(ITwoInts, ti)
+          Checking if a > b
+          []
+        
+        
+        Compare ValidationError
+        -----------------------
+        
+        There was an issue with compare validation error with somthing else then an
+        exceptions. Let's test if we can compare ValidationErrors with different things
+        
+          >>> from zope.schema._bootstrapinterfaces import ValidationError
+          >>> v1 = ValidationError('one')
+          >>> v2 = ValidationError('one')
+          >>> v3 = ValidationError('another one')
+        
+        A ValidationError with the same arguments compares:
+        
+          >>> v1 == v2
+          True
+        
+        but not with an error with different arguments:
+        
+          >>> v1 == v3
+          False
+        
+        We can also compare validation erros with other things then errors. This 
+        was running into an AttributeError in previous versions of zope.schema. e.g.
+        AttributeError: 'NoneType' object has no attribute 'args'
+        
+          >>> v1 == None
+          False
+        
+          >>> v1 == object()
+          False
+        
+          >>> v1 == False
+          False
+        
+          >>> v1 == True
+          False
+        
+          >>> v1 == 0
+          False
+        
+          >>> v1 == 1
+          False
+        
+          >>> v1 == int
+          False
+        
+        If we compare a ValidationError with another validation error based class,
+        we will get the following result:
+        
+          >>> from zope.schema._bootstrapinterfaces import RequiredMissing
+          >>> r1 = RequiredMissing('one')
+          >>> v1 == r1
+          True
+        
+        
+        =======
+        CHANGES
+        =======
+        
+        3.7.1 (2010-12-25)
+        ------------------
+        
+        - The validation token, used in the validation of schema with Object
+          Field to avoid infinite recursion, has been renamed.
+          ``__schema_being_validated`` became ``_v_schema_being_validated``,
+          a volatile attribute, to avoid persistency and therefore,
+          read/write conflicts.
+        
+        - Don't allow "[\]^`" in DottedName.
+          https://bugs.launchpad.net/zope.schema/+bug/191236
+        
+        3.7.0 (2010-09-12)
+        ------------------
+        
+        - Improve error messages when term tokens or values are duplicates.
+        
+        - Fix the buildout so the tests run.
+        
+        3.6.4 (2010-06-08)
+        ------------------
+        
+        - fix validation of schema with Object Field that specify Interface schema.
+        
+        3.6.3 (2010-04-30)
+        ------------------
+        
+        - Prefer the standard libraries doctest module to the one from zope.testing.
+        
+        3.6.2 (2010-04-30)
+        ------------------
+        
+        - Avoid maximum recursion when validating Object field that points to cycles
+        
+        - Made the dependency on ``zope.i18nmessageid`` optional.
+        
+        3.6.1 (2010-01-05)
+        ------------------
+        
+        - Allow "setup.py test" to run at least a subset of the tests runnable
+          via ``bin/test`` (227 for ``setup.py test`` vs. 258. for
+          ``bin/test``)
+        
+        - Make ``zope.schema._bootstrapfields.ValidatedProperty`` descriptor
+          work under Jython.
+        
+        - Make "setup.py test" tests pass on Jython.
+        
+        3.6.0 (2009-12-22)
+        ------------------
+        
+        - Prefer zope.testing.doctest over doctestunit.
+        
+        - Extend validation error to hold the field name.
+        
+        - Add FieldProperty class that uses Field.get and Field.set methods 
+          instead of storing directly on the instance __dict__.
+        
+        3.5.4 (2009-03-25)
+        ------------------
+        
+        - Don't fail trying to validate default value for Choice fields with
+          IContextSourceBinder object given as a source. See
+          https://bugs.launchpad.net/zope3/+bug/340416. 
+        
+        - Add an interface for ``DottedName`` field.
+        
+        - Add ``vocabularyName`` attribute to the ``IChoice`` interface, change
+          "vocabulary" attribute description to be more sensible, making it
+          ``zope.schema.Field`` instead of plain ``zope.interface.Attribute``.
+        
+        - Make IBool interface of Bool more important than IFromUnicode so adapters
+          registered for IBool take precendence over adapters registered for
+          IFromUnicode.
+        
+        
+        3.5.3 (2009-03-10)
+        ------------------
+        
+        - Make Choice and Bool fields implement IFromUnicode interface, because
+          they do provide the ``fromUnicode`` method.
+        
+        - Change package's mailing list address to zope-dev at zope.org, as
+          zope3-dev at zope.org is now retired.
+        
+        - Fix package's documentation formatting. Change package's description.
+        
+        - Add buildout part that builds Sphinx-generated documentation.
+        
+        - Remove zpkg-related file.
+        
+        3.5.2 (2009-02-04)
+        ------------------
+        
+        - Made validation tests compatible with Python 2.5 again (hopefully not
+          breaking Python 2.4)
+        
+        - Added an __all__ package attribute to expose documentation.
+        
+        3.5.1 (2009-01-31)
+        ------------------
+        
+        - Stop using the old old set type.
+        
+        - Make tests compatible and silent with Python 2.4.
+        
+        - Fix __cmp__ method in ValidationError. Show some side effects based on the
+          existing __cmp__ implementation. See validation.txt
+        
+        - Make 'repr' of the ValidationError and its subclasses more sensible. This
+          may require you to adapt your doctests for the new style, but now it makes
+          much more sense for debugging for developers.
+        
+        3.5.0a2 (2008-12-11)
+        --------------------
+        
+        - Move zope.testing to "test" extras_require, as it is not needed
+          for zope.schema itself.
+        
+        - Change the order of classes in SET_TYPES tuple, introduced in
+          previous release to one that was in 3.4 (SetType, set), because
+          third-party code could be dependent on that order. The one
+          example is z3c.form's converter.
+        
+        3.5.0a1 (2008-10-10)
+        --------------------
+        
+        - Added the doctests to the long description.
+        
+        - Removed use of deprecated 'sets' module when running under Python 2.6.
+        
+        - Removed spurious doctest failure when running under Python 2.6.
+        
+        - Added support to bootstrap on Jython.
+        
+        - Added helper methods for schema validation: ``getValidationErrors``
+          and ``getSchemaValidationErrors``.
+        
+        - zope.schema now works on Python2.5
+        
+        3.4.0 (2007-09-28)
+        ------------------
+        
+        Added BeforeObjectAssignedEvent that is triggered before the object
+        field sets a value.
+        
+        3.3.0 (2007-03-15)
+        ------------------
+        
+        Corresponds to the version of the zope.schema package shipped as part of
+        the Zope 3.3.0 release.
+        
+        3.2.1 (2006-03-26)
+        ------------------
+        
+        Corresponds to the version of the zope.schema package shipped as part of
+        the Zope 3.2.1 release.
+        
+        Fixed missing import of 'VocabularyRegistryError'.  See
+        http://www.zope.org/Collectors/Zope3-dev/544 .
+        
+        3.2.0 (2006-01-05)
+        ------------------
+        
+        Corresponds to the version of the zope.schema package shipped as part of
+        the Zope 3.2.0 release.
+        
+        Added "iterable" sources to replace vocabularies, which are now deprecated
+        and scheduled for removal in Zope 3.3.
+        
+        3.1.0 (2005-10-03)
+        ------------------
+        
+        Corresponds to the version of the zope.schema package shipped as part of
+        the Zope 3.1.0 release.
+        
+        Allowed 'Choice' fields to take either a 'vocabulary' or a 'source'
+        argument (sources are a simpler implementation).
+        
+        Added 'TimeDelta' and 'ASCIILine' field types.
+        
+        3.0.0 (2004-11-07)
+        ------------------
+        
+        Corresponds to the version of the zope.schema package shipped as part of
+        the Zope X3.0.0 release.
+        
+Platform: UNKNOWN

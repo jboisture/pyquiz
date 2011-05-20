@@ -1,0 +1,165 @@
+Collective.recipe.omelette test suite
+=====================================
+
+Install a fancy omelette with an egg, some packages, and a product::
+
+    >>> write('buildout.cfg',
+    ... """
+    ... [buildout]
+    ... develop = %(test_dir)s/omelettetests.egg1
+    ... parts = omelette
+    ...
+    ... [omelette]
+    ... recipe = collective.recipe.omelette
+    ... eggs = egg.with.name.different.from.contents
+    ... packages = %(test_dir)s/package .
+    ... products = %(test_dir)s/Products
+    ... """ % globals())
+    >>> print system(buildout + ' -v')
+    Installing...
+    ...
+    Installing omelette.
+    ...
+    omelette: Warning: (While processing package ...Product1) Link already exists.  Skipping.
+    <BLANKLINE>
+
+Now we have everything linked together in one place, pointing at the real locations::
+
+    >>> import os
+    >>> ls('parts')
+    d buildout
+    d omelette
+    >>> cat('parts/omelette/omelettetests/ingredient.py')
+    """Namespace packages can contain modules.  This is one such module."""
+    >>> ls('parts/omelette/omelettetests/egg1')
+    - __init__.py
+    - in_egg1.txt
+    >>> ls('parts/omelette/subpackage')
+    - __init__.py
+    - in_subpackage.txt
+    >>> ls('parts/omelette/Products')
+    d Product1
+    d Product2
+    - __init__.py
+    >>> ls('parts/omelette/Products/Product1')
+    - __init__.py
+    - in_Product1.txt
+    >>> ls('parts/omelette/Products/Product2')
+    - __init__.py
+    - in_packaged_Product2.txt    
+    
+Add a new product and re-run buildout to make sure it updates::
+
+    >>> mkdir('%(test_dir)s/Products/Product3' % globals())
+    >>> 'omelette: Warning:' in system(buildout + ' -q')
+    True
+    >>> ls('parts/omelette/Products')
+    d Product1
+    d Product2
+    d Product3
+    - __init__.py
+    
+Make sure we didn't clobber stuff that was linked from outside the omelette directory when we
+reinstalled (we needed to take extra care that this didn't happen when using junction on Windows!)::
+
+    >>> ls('parts/omelette/omelettetests/egg1')
+    - __init__.py
+    - in_egg1.txt
+    
+Change the name of the part and make sure it updates, and do the same check as just above for not clobbering
+stuff accidentally::
+
+    >>> write('buildout.cfg',
+    ... """
+    ... [buildout]
+    ... develop = %(test_dir)s/omelettetests.egg1
+    ... parts = frittata
+    ...
+    ... [frittata]
+    ... recipe = collective.recipe.omelette
+    ... eggs = egg.with.name.different.from.contents
+    ... packages = %(test_dir)s/package .
+    ... products = %(test_dir)s/Products
+    ... """ % globals())
+    >>> 'frittata: Warning:' in system(buildout + ' -q')
+    True
+    >>> ls('parts')
+    d buildout
+    d frittata
+    >>> ls('parts/frittata/omelettetests/egg1')
+    - __init__.py
+    - in_egg1.txt
+    
+If trying to create a package that has already been symlinked to elsewhere, we should give a warning
+and skip it, rather than creating a symlink in the non-omelette location!::
+
+    >>> write('buildout.cfg',
+    ... """
+    ... [buildout]
+    ... parts = omelette
+    ...
+    ... [omelette]
+    ... recipe = collective.recipe.omelette
+    ... packages =
+    ...     %(test_dir)s/package .
+    ...     %(test_dir)s/Products Products
+    ... """ % globals())
+    >>> print system(buildout + ' -q')
+    omelette: Warning: (While processing package directory ...Products) Link already exists at ...Products.  Skipping.
+    <BLANKLINE>
+    >>> ls('%(test_dir)s/package/Products' % globals())
+    d Product1
+    d Product2
+    - __init__.py
+
+You can also override the location of the omelette if you want to put it
+somewhere else entirely::
+
+    >>> write('buildout.cfg',
+    ... """
+    ... [buildout]
+    ... eggs = setuptools
+    ... parts = omelette
+    ...
+    ... [omelette]
+    ... recipe = collective.recipe.omelette
+    ... eggs = ${buildout:eggs}
+    ... location = ${buildout:directory}/omelette
+    ... """)
+    >>> print system(buildout + ' -q')
+    >>> os.path.exists('omelette')
+    True
+
+You can ignore a particular package::
+
+    >>> write('buildout.cfg',
+    ... """
+    ... [buildout]
+    ... eggs = setuptools
+    ... parts = omelette
+    ...
+    ... [omelette]
+    ... recipe = collective.recipe.omelette
+    ... eggs = ${buildout:eggs}
+    ... ignores = setuptools, distribute
+    ... """)
+    >>> print system(buildout + ' -q')
+    >>> os.path.exists('parts/omelette/setuptools')
+    False
+
+Or ignore all development eggs::
+
+    >>> write('buildout.cfg',
+    ... """
+    ... [buildout]
+    ... eggs = collective.recipe.omelette
+    ... parts = omelette
+    ...
+    ... [omelette]
+    ... recipe = collective.recipe.omelette
+    ... eggs = ${buildout:eggs}
+    ... ignore-develop = true
+    ... """)
+    >>> print system(buildout + ' -q')
+    >>> os.path.exists('parts/omelette/collective')
+    False

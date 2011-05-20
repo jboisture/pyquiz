@@ -1,0 +1,17 @@
+pyramid
+repoze.zodbconn
+repoze.tm2>=1.0b1
+repoze.retry
+ZODB3
+WebError
+Babel
+nose
+nose-cov
+Sphinx
+repoze.folder
+WebTest
+lxml
+deform
+colander
+peppercorn
+iso8601

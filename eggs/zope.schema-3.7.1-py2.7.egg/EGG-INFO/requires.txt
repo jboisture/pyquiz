@@ -1,0 +1,9 @@
+setuptools
+zope.interface
+zope.event
+
+[test]
+zope.testing
+
+[docs]
+z3c.recipe.sphinxdoc

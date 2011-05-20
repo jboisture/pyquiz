@@ -1,0 +1,604 @@
+Internationalization
+--------------------
+
+Genshi templates support the i18n attribute language. The
+implementation is based on this document:
+
+  * http://wiki.zope.org/zope3/ZPTInternationalizationSupport
+
+With the exception of i18n:data and i18n:source, the implementation is
+complete.
+
+To get set started, let's provide German mock translations for all
+msgids:
+
+  >>> from zope import component
+  >>> from zope.i18n.simpletranslationdomain import SimpleTranslationDomain
+  >>> td = SimpleTranslationDomain("test", {
+  ...     ("de", "test_msgid") : u"Mock translation of 'test_msgid'.",
+  ...     ("de", "msg_id")      : u"Mock translation of 'msg_id'.",
+  ...     ("de", "tid")        : u"Mock translation of 'tid'.",
+  ...     ("de", "aid")        : u"Mock translation of 'aid'.",
+  ...     ("de", "Default")    : u"Mock translation of 'Default'.",
+  ...     ("de", "bananas")    : u"Mock translation of ${count} bananas.",
+  ...     ("de", "two_bananas"): u"Ich will ${bananas} Bananen und ${apples} Äpfels.",
+  ...     ("de", "month_may")  : u"Mai",
+  ...     ("de", "&reg; &lt;") : u"German &reg; &lt;",
+  ...     ("de", "The Dutch")  : u"Die Hollander",
+  ...     ("de", "missing_id") : u"missing_id",
+  ...     ("nl", "size_advise"): u"${retailer} adviseert u ${size}.",
+  ...     ("nl", "size_advise_suggestion"): u"maat ${size}",
+  ...     })
+  >>> component.provideUtility(td, name="test")
+
+Translation of tag contents
+---------------------------
+
+First, a simple example:
+
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <span i18n:domain="test" i18n:translate="test_msgid">
+  ...     Default
+  ...   </span>
+  ... </div>"""
+
+First we need to turn the template into a callable:
+
+  >>> from chameleon.genshi.template import GenshiTemplate
+  >>> template = GenshiTemplate(body)
+
+Let's try rendering this template without passing a target language.
+    
+  >>> print template.render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>
+      Default
+    </span>
+  </div>
+
+Now we'll render the template again---passing German as the language.
+
+  >>> print template.render(target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>Mock translation of 'test_msgid'.</span>
+  </div>
+
+Let's try infering the translation message id from the tag body.
+  
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <span i18n:domain="test" i18n:translate="">
+  ...     Default
+  ...   </span>
+  ... </div>"""
+
+Not passing a language:
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>
+      Default
+    </span>
+  </div>
+
+Passing German:
+  
+  >>> print template.render(target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>Mock translation of 'Default'.</span>
+  </div>
+
+We could also add a named block inside the tag.
+
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <p i18n:domain="test" i18n:translate="bananas">
+  ...     <span i18n:name="count">18</span> bananas.
+  ...   </p>
+  ... </div>"""
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <p>
+      <span>18</span> bananas.
+    </p>
+  </div>
+    
+  >>> print template.render(target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <p>Mock translation of <span>18</span> bananas.</p>
+  </div>
+
+Or two:
+
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <span i18n:domain="test" i18n:translate="two_bananas">
+  ...     I want <span i18n:name="bananas">12</span> bananas and
+  ...     <span i18n:name="apples">8</span> apples.
+  ...   </span>
+  ... </div>"""
+
+Without a language this gives:
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>
+       I want <span>12</span> bananas and
+       <span>8</span> apples.
+    </span>
+  </div>
+
+In German:
+
+  >>> print template.render(target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>Ich will <span>12</span> Bananen und <span>8</span> Äpfels.</span>
+  </div>
+
+Or nested:
+
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  ...      xmlns:py="http://genshi.edgewall.org/">
+  ...   <span i18n:domain="test" i18n:translate="size_advise">
+  ...     <span py:strip="True" i18n:name="retailer">${retailer}</span> recommends
+  ...     <strong i18n:name="size" i18n:translate="size_advise_suggestion">size
+  ...        <span py:strip="True" i18n:name="size">${size}</span></strong>.
+  ...   </span>
+  ... </div>"""
+
+Without a language this gives:
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render(retailer=u"Esprit", size=u"XL")
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>
+       Esprit recommends <strong>size XL</strong>.
+    </span>
+  </div>
+
+In Dutch:
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render(retailer=u"Esprit", size=u"XL", target_language="nl")
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>Esprit adviseert u <strong>maat XL</strong>.</span>
+  </div>
+
+Here's an example from a template for a calendar widget:
+
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <div i18n:translate="" py:strip="">
+  ...       <span i18n:name="monthname"
+  ...             i18n:translate=""
+  ...             py:content="monthname"
+  ...             py:strip="">monthname</span>
+  ...       <span i18n:name="year"
+  ...             i18n:translate=""
+  ...             py:content="year"
+  ...             py:strip="">year</span>
+  ...   </div>
+  ... </div>"""
+
+We'll set up the tests such that pass in an i18n message for the month
+name.
+  
+  >>> from zope.i18nmessageid import Message
+  
+  >>> year = 2008
+  >>> monthname = Message(u'month_may', domain="test", default=u"May")
+
+Without passing a language.
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render(year=year, monthname=monthname)
+  <div xmlns="http://www.w3.org/1999/xhtml">
+      May
+      2008
+  </div>
+
+Passing German:
+  
+  >>> print template.render(year=year, monthname=monthname, target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+      Mai
+      2008
+  </div>
+  
+Entities and dynamic translation strings:
+  
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <span i18n:domain="test" i18n:translate="">
+  ...     <sup>&reg;</sup> &gt;
+  ...     <sup>&lt;</sup>
+  ...   </span>
+  ... </div>"""
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>
+      <sup>&reg;</sup> &gt;
+      <sup>&lt;</sup>
+    </span>
+  </div>
+
+Translating entities:
+  
+  >>> template = GenshiTemplate("""\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <span py:strip="" i18n:domain="test" i18n:translate="">
+  ...     &reg;
+  ...     &lt;
+  ...   </span>
+  ... </div>""")
+
+  >>> print template.render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    &reg;
+    &lt;
+  </div>
+  
+  >>> print template.render(year=year, monthname=monthname, target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    German &reg; &lt;
+  </div>
+
+If  we're  replacing  or   inserting  content  dynamically,  and  this
+evaluates to ``None``, the translated content will be the empty string.
+  
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <span i18n:domain="test" py:content="None" i18n:translate="">
+  ...     Will be appear as empty string.
+  ...   </span>
+  ...   <span i18n:domain="test" py:replace="None" i18n:translate="">
+  ...     Will be appear as empty string.
+  ...   </span>
+  ... </div>"""
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span></span>
+  </div>
+
+If we have dynamic content in a translation, and it doesn't match a
+specific message id, it is left untouched:
+
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <span i18n:domain="test" i18n:translate="">
+  ...     The book is on the <span py:content="'desk'">table</span>.
+  ...   </span>
+  ... </div>"""
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>
+      The book is on the <span>desk</span>.
+    </span>
+  </div>
+
+If a message id is supplied, unnamed blocks are rendered as-is.
+  
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <span i18n:domain="test" i18n:translate="msg_id" py:strip="">
+  ...     The book is on the <span>table</span>.
+  ...   </span>
+  ... </div>"""
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+      The book is on the <span>table</span>
+  </div>
+
+  >>> print template.render(target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    Mock translation of 'msg_id'.
+  </div>
+
+Translation of tag attributes
+-----------------------------
+
+A simple example to start with.
+  
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <span i18n:domain="test" title="Default" i18n:attributes="title">
+  ...     Default
+  ...   </span>
+  ... </div>"""
+
+Not passing a language:
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span title="Default">
+      Default
+    </span>
+  </div>
+
+Passing German:
+
+  >>> print template.render(target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span title="Mock translation of 'Default'.">
+      Default
+    </span>
+  </div>
+
+Use an explicit msgid:
+
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <span i18n:domain="test" title="Simple Title"
+  ...         i18n:attributes="title test_msgid">
+  ...     Default
+  ...   </span>
+  ... </div>"""
+
+Not passing a language:
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span title="Simple Title">
+      Default
+    </span>
+  </div>
+
+Passing German:
+
+  >>> print template.render(target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span title="Mock translation of 'test_msgid'.">
+      Default
+    </span>
+  </div>
+
+Use an explicit msgid with a trailing semicolon.
+
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <span i18n:domain="test" title="Simple Title"
+  ...         i18n:attributes="title test_msgid;">
+  ...     Default
+  ...   </span>
+  ... </div>"""
+
+Not passing a language:
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span title="Simple Title">
+      Default
+    </span>
+  </div>
+
+Passing German:
+
+  >>> print template.render(target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span title="Mock translation of 'test_msgid'.">
+      Default
+    </span>
+  </div>
+
+Use multiple attributes on the same tag.
+
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <span i18n:domain="test" title="Simple Title"
+  ...         longdesc="A not so short description."
+  ...         i18n:attributes="title test_msgid; longdesc Default">
+  ...     Default
+  ...   </span>
+  ... </div>"""
+
+Not passing a language:
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span title="Simple Title" longdesc="A not so short description.">
+      Default
+    </span>
+  </div>
+
+Passing German:
+
+  >>> print template.render(target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span title="Mock translation of 'test_msgid'." longdesc="Mock translation of 'Default'.">
+      Default
+    </span>
+  </div>
+
+Translation of tag content and tag attributes
+---------------------------------------------
+
+A simple example to start with.
+  
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  ...      xmlns:py="http://genshi.edgewall.org/">
+  ...   <span i18n:domain="test" i18n:translate="tid"
+  ...         title="Title" i18n:attributes="title aid">
+  ...     Default, "default", 'default'
+  ...   </span>
+  ...   <span i18n:domain="test" i18n:translate=""
+  ...         py:content="'tid'">
+  ...     Default, "default", 'default'
+  ...   </span>
+  ...   <span i18n:domain="test" i18n:translate="">
+  ...     ${'tid'}
+  ...   </span>
+  ...   <span i18n:domain="test" i18n:translate="">
+  ...     t${'i'}${'d'}
+  ...   </span>
+  ... </div>"""
+
+Not passing a language:
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span title="Title">
+      Default, "default", 'default'
+    </span>
+    <span>tid</span>
+    <span>tid</span>
+    <span>tid</span>    
+  </div>
+
+Passing German:
+
+  >>> print template.render(target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span title="Mock translation of 'aid'.">Mock translation of 'tid'.</span>
+    <span>Mock translation of 'tid'.</span>
+    <span>Mock translation of 'tid'.</span>
+    <span>Mock translation of 'tid'.</span>
+  </div>
+
+Make sure translations play nice with loops.
+
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  ...      i18n:domain="test">
+  ...   <div py:for="i in range(1)">
+  ...     <span i18n:translate="tid">Default</span>
+  ...   </div>
+  ... </div>"""
+
+Not passing a language:
+
+  >>> print GenshiTemplate(body).render()
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <div>
+      <span>Default</span>
+    </div>
+  </div>
+
+Message interpolation
+---------------------
+
+Messages without a default translation just output the message
+string (identifier).
+
+  >>> who = Message(u"The Dutch", domain="test")
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <span>${who}</span>
+  ... </div>"""
+
+Not passing a language:
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render(who=who)
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>The Dutch</span>
+  </div>
+
+Passing German:
+
+  >>> print template.render(who=who, target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>Die Hollander</span>
+  </div>
+
+Using ``py:content``:
+
+  >>> template = GenshiTemplate("""\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n">
+  ...   <span py:content="who" />
+  ... </div>""")
+
+Not passing a language:
+
+  >>> print template(who=who)
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>The Dutch</span>
+  </div>
+
+Passing German:
+
+  >>> print template(who=who, target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>Die Hollander</span>
+  </div>
+
+Messages from another translation domain
+----------------------------------------
+
+  >>> who = Message(u"The Dutch", domain="test")
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  ...      i18n:domain="other">
+  ...   <span>${who}</span>
+  ... </div>"""
+
+Translating:
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render(who=who, target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>Die Hollander</span>
+  </div>
+
+Messages without a translation
+------------------------------
+
+For valid msgids that have no translation GNU gettext returns the
+message id, which trips the zope.i18n default handling. Unfortuantely
+this is very common: for a newly created po files without any translations
+this holds for every message. zope.tal seems to get around this by doing its
+own PO handling.
+
+  >>> body = """\
+  ... <div xmlns="http://www.w3.org/1999/xhtml"
+  ...      xmlns:i18n="http://xml.zope.org/namespaces/i18n"
+  ...      i18n:domain="test">
+  ...   <span i18n:translate="missing_id">Default value</span>
+  ... </div>"""
+
+Translating:
+
+  >>> template = GenshiTemplate(body)
+  >>> print template.render(target_language='de')
+  <div xmlns="http://www.w3.org/1999/xhtml">
+    <span>Default value</span>
+  </div>
