@@ -329,8 +329,8 @@ def addsitepackages(known_paths):
     known_paths.add(os.path.normcase(setuptools_path))
     import pkg_resources
     buildout_paths = [
-        '/home/jboisture/buildout/eggs/zc.buildout-1.5.2-py2.7.egg',
-        '/home/jboisture/buildout/eggs/setuptools-0.6c12dev_r88795-py2.7.egg'
+        '/home/jboisture/buildout/eggs/setuptools-0.6c12dev_r88795-py2.7.egg',
+        '/home/jboisture/buildout/eggs/zc.buildout-1.5.2-py2.7.egg'
         ]
     for path in buildout_paths:
         sitedir, sitedircase = makepath(path)

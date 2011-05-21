@@ -10,7 +10,7 @@ setup.cfg
 setup.py
 versions.cfg
 pyquiz/__init__.py
-pyquiz/resources.py
+pyquiz/models.py
 pyquiz/tests.py
 pyquiz/views.py
 pyquiz.egg-info/PKG-INFO
@@ -30,3 +30,4 @@ pyquiz/static/pyramid-small.png
 pyquiz/static/pyramid.png
 pyquiz/static/transparent.gif
 pyquiz/templates/mytemplate.pt
+pyquiz/templates/test.pt
