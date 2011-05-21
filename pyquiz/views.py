@@ -27,13 +27,13 @@ class Question(MappingSchema):
 class Questions(SequenceSchema):
     questions = Question()
 
-class Test(Schema):
+class Tests(Schema):
     name = SchemaNode(String())
     class_id = SchemaNode(String())
     questions = Questions()
 
 def test_form(request):
-    schema = Test()
+    schema = Tests()
     myform = Form(schema, buttons=('submit',), use_ajax=True)
 
     return {'form':myform.render()}
