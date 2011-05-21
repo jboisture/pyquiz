@@ -17,7 +17,6 @@
 </head>
 <body id="public">
   <div>
-    <div id="form" tal:content="structure form"/>
     <h1>Captured</h1>
     <div/>
     <span tal:replace="structure form"/>
