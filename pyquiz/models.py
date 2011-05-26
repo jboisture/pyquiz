@@ -91,12 +91,14 @@ class Question(Base):
     question_type = Column(String)
     question = Column(String)
     answers = relationship("Answer", backref = "questions")
+    question_num = Column(Integer)
 
-    def __init__(self, graded, question_type, question, test_id):
+    def __init__(self, graded, question_type, question, test_id, question_num):
         self.graded = graded
         self.question_type = question_type
         self.question = question
         self.test_id = test_id
+        self.question_num = question_num
 
 class Answer(Base):
     __tablename__ = "answers"
@@ -104,70 +106,18 @@ class Answer(Base):
     question_id = Column(Integer, ForeignKey("questions.id"))
     answer = Column(String)
     correct = Column(Boolean)
+    option = Column(String)
 
-    def __init__(self, question_id, answer, correct):
+    def __init__(self, question_id, answer, correct, option):
         self.question_id = question_id
-        self.answer = answer
+        self.answer = option + ". " + answer
         self.correct = correct
+        self.option = option
 
-def make_test():
-    session = DBSession()
-    if len(session.query(Test).all()) < 1:
-        test = Test("This is a test", "Math")
-        session.add(test)
-        session.flush()
-        question = Question(True, "Multiple_Choice", "does this work", test.id)
-        session.add(question)
-        session.flush()
-        answer = Answer(question.id, "yes", True)
-        answer2 = Answer(question.id, "no", False)
-        session.add(answer)
-        session.add(answer2)
-        session.flush()
-        transaction.commit()
-    if len(session.query(Test).all()) < 2:
-        test = Test("This is the second test", "Math")
-        session.add(test)
-        session.flush()
-        question = Question(True, "Multiple_Choice", "does this work again", test.id)
-        session.add(question)
-        session.flush()
-        answer = Answer(question.id, "yes", True)
-        answer2 = Answer(question.id, "no", False)
-        answer3 = Answer(question.id, "maybe", False)
-        session.add(answer)
-        session.add(answer2)
-        session.add(answer3)
-        session.flush()
-        transaction.commit()
-    if len(session.query(Test).all()) < 3:
-        test = Test("This test should have 2 questions", "Math")
-        session.add(test)
-        session.flush()
-        question = Question(True, "Multiple_Choice", "does this work again", test.id)
-        session.add(question)
-        session.flush()
-        answer = Answer(question.id, "yes", True)
-        answer2 = Answer(question.id, "no", False)
-        answer3 = Answer(question.id, "maybe", False)
-        session.add(answer)
-        session.add(answer2)
-        session.add(answer3)
-        session.flush()
-        question2 = Question(True, "Multiple_Choice", "are there two questions", test.id)
-        session.add(question2)
-        session.flush()
-        answer = Answer(question2.id, "yes", True)
-        answer2 = Answer(question2.id, "no", False)
-        session.add(answer)
-        session.add(answer2)
-        session.flush()
-        transaction.commit()
-    
 
 
 def populate():
-    make_test()
+    pass
     #create_question(test.id, True, "Multiple_Choice", "does this work", 
     #                   [("yes", True),("no",False)], session)
     

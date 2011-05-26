@@ -3,7 +3,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <title>
-  Deform Sample Form App
+   Pyquiz
 </title>
 <!-- Meta Tags -->
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -17,7 +17,7 @@
 </head>
 <body id="public">
   <div>
-    <h1>Captured</h1>
+    <h1>Create a Test</h1>
     <div/>
     <span tal:replace="structure form"/>
     <script type="text/javascript">

@@ -5,7 +5,7 @@ from sqlalchemy.pool import NullPool
 
 from pyquiz.models import initialize_sql
 
-
+from pyramid.session import UnencryptedCookieSessionFactoryConfig
 from pyramid.i18n import get_localizer
 from pyramid.threadlocal import get_current_request
 
@@ -39,7 +39,9 @@ def main(global_config, **settings):
     initialize_sql(engine)
     deform_template_dir = resource_filename('deform', 'templates/')
     deform.Form.set_zpt_renderer(deform_template_dir, translator=translator)
-    config = Configurator(settings=settings)
+    my_session_factory = UnencryptedCookieSessionFactoryConfig('itsaseekreet')
+    config = Configurator(settings=settings, 
+                          session_factory = my_session_factory)
     config.add_static_view('static', 'pyquiz:static')
     config.add_static_view('static_deform', 'deform:static')
     config.add_route('home', '/', view='pyquiz.views.my_view',
@@ -48,6 +50,10 @@ def main(global_config, **settings):
                      view_renderer='templates/forms.pt')
     config.add_route('test', '/test', view='pyquiz.views.test',
                      view_renderer='templates/test.pt')
+    config.add_route('submit', '/submit', view='pyquiz.views.submit_test',
+                     view_renderer='templates/submit.pt')
+    config.add_route('grade', '/grade', view='pyquiz.views.grade_test',
+                     view_renderer='templates/grade.pt')
     config.add_translation_dirs('pyquiz:locale', 'colander:locale', 'deform:locale')
     config.scan('pyquiz')
     return config.make_wsgi_app()

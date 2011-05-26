@@ -1,0 +1,28 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" xmlns:tal="http://xml.zope.org/namespaces/tal">
+<head>
+  <title>Pyquiz</title>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+  <meta name="keywords" content="python web application" />
+  <meta name="description" content="pyramid web application" />
+  <link rel="shortcut icon" href="${request.static_url('pyquiz:static/favicon.ico')}" />
+  <h1>${test.name}</h1>
+</head>
+<body>
+  <div id="wrap">
+
+    <div id="middle">
+      <div class="middle align-center">
+
+        <h3>Results:</h3>
+        <p>${message}</p>
+        <h3>Questions:</h3>
+        <ul tal:repeat="question questions">
+            <li>${question}</li>
+        </ul>
+        <a href="/">return home</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

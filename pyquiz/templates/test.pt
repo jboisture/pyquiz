@@ -1,28 +1,31 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" xmlns:tal="http://xml.zope.org/namespaces/tal">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <title>${test.name}</title>
-  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
-  <meta name="keywords" content="python web application" />
-  <meta name="description" content="pyramid web application" />
-  <link rel="shortcut icon" href="${request.static_url('pyquiz:static/favicon.ico')}" />
-  <h1>${test.name}</h1>
+<title>
+   Pyquiz
+</title>
+<!-- Meta Tags -->
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- JavaScript -->
+<script type="text/javascript" src="static/scripts/deform.js"></script>
+<script type="text/javascript"
+          src="static/scripts/jquery-1.4.2.min.js"></script>
+<!-- CSS -->
+<link rel="stylesheet" href="static/css/form.css" type="text/css" />
+<link rel="stylesheet" href="static/css/theme.css" type="text/css" />
 </head>
-<body>
-  <div id="wrap">
-    <div id="middle">
-      <div class="middle align-center">
-        <tr tal:repeat="question questions">
-          <td><h3>${question[0].question}</h3>
-            <ul tal:repeat="answer question[1]">
-              <li>
-                ${answer.answer}
-              </li>
-            </ul>
-          </td>
-        </tr>
-      </div>
-    </div>
+<body id="public">
+  <div>
+    <h1>${test.name}</h1>
+    <div/>
+    <span tal:replace="structure form"/>
+    <script type="text/javascript">
+      jQuery(function() {
+         deform.load();
+         });
+    </script>
+    <a href=${link}>review test</a>
   </div>
 </body>
 </html>
