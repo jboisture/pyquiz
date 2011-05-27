@@ -1,3 +1,0 @@
-setuptools
-ZODB3 >= 3.8.1
-ZConfig

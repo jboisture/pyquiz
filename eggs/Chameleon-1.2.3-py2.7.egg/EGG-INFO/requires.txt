@@ -1,4 +1,0 @@
-setuptools
-
-[i18nize]
-lxml

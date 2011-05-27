@@ -1,9 +1,0 @@
-Chameleon>=1.2.3,<1.999
-colander>=0.8
-peppercorn>=0.3
-translationstring
-
-[demo]
-Pyramid
-pygments
-Babel

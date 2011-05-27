@@ -1,4 +1,0 @@
-setuptools
-ZODB3
-zope.component
-zope.interface

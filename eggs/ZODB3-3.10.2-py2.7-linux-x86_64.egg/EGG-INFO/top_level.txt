@@ -1,4 +1,0 @@
-ZODB
-persistent
-ZEO
-BTrees

@@ -1,2 +1,0 @@
-sqlalchemy/cprocessors.so
-sqlalchemy/cresultproxy.so
