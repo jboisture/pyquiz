@@ -3,30 +3,30 @@ def bind():
     from cPickle import loads as _loads
     _lookup_attr = _loads('cchameleon.core.codegen\nlookup_attr\np1\n.')
     _re_amp = _loads("cre\n_compile\np1\n(S'&(?!([A-Za-z]+|#[0-9]+);)'\np2\nI0\ntRp3\n.")
-    _attrs_40768976 = _loads('(dp1\n.')
+    _attrs_71820816 = _loads('(dp1\nVclass\np2\nVapp-welcome\np3\ns.')
     _init_stream = _loads('cchameleon.core.generation\ninitialize_stream\np1\n.')
-    _attrs_40768336 = _loads('(dp1\nVclass\np2\nVapp-welcome\np3\ns.')
-    _attrs_40768720 = _loads('(dp1\nVhref\np2\nV/form\np3\ns.')
-    _attrs_40768528 = _loads('(dp1\nVclass\np2\nVapp-name\np3\ns.')
-    _attrs_40768848 = _loads('(dp1\n.')
-    _attrs_40767952 = _loads('(dp1\nVid\np2\nVmiddle\np3\ns.')
+    _attrs_71819984 = _loads('(dp1\n.')
+    _attrs_71819408 = _loads('(dp1\n.')
+    _attrs_71820624 = _loads('(dp1\nVclass\np2\nVmiddle align-center\np3\ns.')
+    _attrs_71821136 = _loads('(dp1\n.')
+    _attrs_71274448 = _loads('(dp1\nVxml:lang\np2\nVen\np3\nsVxmlns\np4\nVhttp://www.w3.org/1999/xhtml\np5\ns.')
+    _attrs_71819728 = _loads('(dp1\nVcontent\np2\nVpyramid web application\np3\nsVname\np4\nVdescription\np5\ns.')
     _init_default = _loads('cchameleon.core.generation\ninitialize_default\np1\n.')
-    _attrs_40033808 = _loads('(dp1\nVcontent\np2\nVtext/html;charset=UTF-8\np3\nsVhttp-equiv\np4\nVContent-Type\np5\ns.')
-    _attrs_40767568 = _loads('(dp1\n.')
-    _attrs_40033488 = _loads('(dp1\n.')
-    _attrs_40034256 = _loads('(dp1\n.')
-    _attrs_40033744 = _loads('(dp1\n.')
-    _attrs_40769168 = _loads('(dp1\n.')
-    _init_scope = _loads('cchameleon.core.utils\necontext\np1\n.')
-    _attrs_40768144 = _loads('(dp1\nVclass\np2\nVmiddle align-center\np3\ns.')
-    _attrs_40033424 = _loads('(dp1\nVxml:lang\np2\nVen\np3\nsVxmlns\np4\nVhttp://www.w3.org/1999/xhtml\np5\ns.')
-    _attrs_40034000 = _loads('(dp1\nVcontent\np2\nVpyramid web application\np3\nsVname\np4\nVdescription\np5\ns.')
-    _attrs_40033872 = _loads('(dp1\nVcontent\np2\nVpython web application\np3\nsVname\np4\nVkeywords\np5\ns.')
-    _attrs_40769296 = _loads('(dp1\nVhref\np2\nV${test.url}\np3\ns.')
-    _attrs_40768656 = _loads('(dp1\n.')
-    _attrs_40767760 = _loads('(dp1\nVid\np2\nVwrap\np3\ns.')
+    _attrs_71819856 = _loads("(dp1\nVhref\np2\nV${request.static_url('pyquiz:static/favicon.ico')}\np3\nsVrel\np4\nVshortcut icon\np5\ns.")
     _init_tal = _loads('cchameleon.core.generation\ninitialize_tal\np1\n.')
-    _attrs_40034128 = _loads("(dp1\nVhref\np2\nV${request.static_url('pyquiz:static/favicon.ico')}\np3\nsVrel\np4\nVshortcut icon\np5\ns.")
+    _attrs_71819600 = _loads('(dp1\nVcontent\np2\nVpython web application\np3\nsVname\np4\nVkeywords\np5\ns.')
+    _attrs_71821456 = _loads('(dp1\n.')
+    _attrs_71821200 = _loads('(dp1\nVhref\np2\nV/form\np3\ns.')
+    _attrs_71821008 = _loads('(dp1\nVclass\np2\nVapp-name\np3\ns.')
+    _init_scope = _loads('cchameleon.core.utils\necontext\np1\n.')
+    _attrs_71820432 = _loads('(dp1\nVid\np2\nVmiddle\np3\ns.')
+    _attrs_71819536 = _loads('(dp1\nVcontent\np2\nVtext/html;charset=UTF-8\np3\nsVhttp-equiv\np4\nVContent-Type\np5\ns.')
+    _attrs_71820240 = _loads('(dp1\nVid\np2\nVwrap\np3\ns.')
+    _attrs_71821328 = _loads('(dp1\n.')
+    _attrs_71821840 = _loads('(dp1\nVhref\np2\nV${test.url}\np3\ns.')
+    _attrs_71821648 = _loads('(dp1\n.')
+    _attrs_71820048 = _loads('(dp1\n.')
+    _attrs_71819472 = _loads('(dp1\n.')
     def render(econtext, rcontext=None):
         macros = econtext.get('macros')
         _translate = econtext.get('_translate')
@@ -43,19 +43,19 @@ def bind():
         u'None'
         _domain = None
         _write('<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">\n')
-        attrs = _attrs_40033424
+        attrs = _attrs_71274448
         _write(u'<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">\n')
-        attrs = _attrs_40033488
+        attrs = _attrs_71819408
         _write(u'<head>\n  ')
-        attrs = _attrs_40033744
+        attrs = _attrs_71819472
         _write(u'<title>Pyquiz</title>\n  ')
-        attrs = _attrs_40033808
+        attrs = _attrs_71819536
         _write(u'<meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />\n  ')
-        attrs = _attrs_40033872
+        attrs = _attrs_71819600
         _write(u'<meta name="keywords" content="python web application" />\n  ')
-        attrs = _attrs_40034000
+        attrs = _attrs_71819728
         _write(u'<meta name="description" content="pyramid web application" />\n  ')
-        attrs = _attrs_40034128
+        attrs = _attrs_71819856
         'join(value("request.static_url(\'pyquiz:static/favicon.ico\')"),)'
         _write(u'<link rel="shortcut icon"')
         _tmp1 = _lookup_attr(econtext['request'], 'static_url')('pyquiz:static/favicon.ico')
@@ -80,19 +80,19 @@ def bind():
                 _tmp1 = _tmp1.replace('"', '&quot;')
             _write(((' href="' + _tmp1) + '"'))
         _write(u' />\n  ')
-        attrs = _attrs_40034256
+        attrs = _attrs_71819984
         _write(u'<h1>Pyquiz</h1>\n</head>\n')
-        attrs = _attrs_40767568
+        attrs = _attrs_71820048
         _write(u'<body>\n  ')
-        attrs = _attrs_40767760
+        attrs = _attrs_71820240
         _write(u'<div id="wrap">\n\n    ')
-        attrs = _attrs_40767952
+        attrs = _attrs_71820432
         _write(u'<div id="middle">\n      ')
-        attrs = _attrs_40768144
+        attrs = _attrs_71820624
         _write(u'<div class="middle align-center">\n        ')
-        attrs = _attrs_40768336
+        attrs = _attrs_71820816
         _write(u'<p class="app-welcome">\n          Welcome to ')
-        attrs = _attrs_40768528
+        attrs = _attrs_71821008
         u'project'
         _write(u'<span class="app-name">')
         _tmp1 = econtext['project']
@@ -120,11 +120,11 @@ def bind():
                 _tmp = _tmp.replace('>', '&gt;')
             _write(_tmp)
         _write(u'</span>, an application generated by')
-        attrs = _attrs_40768656
+        attrs = _attrs_71821136
         _write(u'<br />\n          the Pyramid web application development framework.\n        </p>\n\n        ')
-        attrs = _attrs_40768720
+        attrs = _attrs_71821200
         _write(u'<a href="/form">Create new test</a>\n        ')
-        attrs = _attrs_40768848
+        attrs = _attrs_71821328
         u'tests'
         _write(u'<h3>Current Tests</h3>\n        ')
         _tmp1 = econtext['tests']
@@ -132,11 +132,11 @@ def bind():
         (_tmp1, _tmp2, ) = repeat.insert('test', _tmp1)
         for test in _tmp1:
             _tmp2 = (_tmp2 - 1)
-            attrs = _attrs_40768976
+            attrs = _attrs_71821456
             _write(u'<ul>\n            ')
-            attrs = _attrs_40769168
+            attrs = _attrs_71821648
             _write(u'<li>')
-            attrs = _attrs_40769296
+            attrs = _attrs_71821840
             "join(value('test.url'),)"
             _write(u'<a')
             _tmp3 = _lookup_attr(test, 'url')
@@ -194,5 +194,5 @@ def bind():
         return _out.getvalue()
     return render
 
-__filename__ = '/home/jboisture/buildout/pyquiz/templates/mytemplate.pt'
+__filename__ = '/home/jboisture/buildout/pyquiz/templates/index.pt'
 registry[(None, True, '1488bdb950901f8f258549439ef6661a49aae984')] = bind()

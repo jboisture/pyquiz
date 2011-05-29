@@ -16,25 +16,13 @@ import deform
 def translator(term):
     return get_localizer(get_current_request()).translate(term)
 
-"""
-class NonPersistentApplicationFinder(PersistentApplicationFinder):
-
-    def __call__(self, environ):
-        app = self.appmaker({})
-        return app"""
 
 
 def main(global_config, **settings):
-    """ This function returns a Pyramid WSGI application.
+    """ 
+    This function returns a Pyramid WSGI application.
+    Sets up all routes connecteing views and templates.
     """
-    """zodb_uri = settings.get('zodb_uri')
-    if zodb_uri is None:
-        finder_class = NonPersistentApplicationFinder
-    else:
-        finder_class = PersistentApplicationFinder
-    finder = finder_class(zodb_uri, appmaker)
-    def get_root(request):
-        return finder(request.environ)"""
     engine = engine_from_config(settings, 'sqlalchemy.',poolclass=NullPool)
     initialize_sql(engine)
     deform_template_dir = resource_filename('deform', 'templates/')
@@ -44,16 +32,17 @@ def main(global_config, **settings):
                           session_factory = my_session_factory)
     config.add_static_view('static', 'pyquiz:static')
     config.add_static_view('static_deform', 'deform:static')
-    config.add_route('home', '/', view='pyquiz.views.my_view',
-                     view_renderer='templates/mytemplate.pt')
-    config.add_route('form', '/form', view='pyquiz.views.test_form',
-                     view_renderer='templates/forms.pt')
-    config.add_route('test', '/test', view='pyquiz.views.test',
+    config.add_route('index', '/', view='pyquiz.views.view_index',
+                     view_renderer='templates/index.pt')
+    config.add_route('create test', '/create_test',   
+                     view='pyquiz.views.view_create_test',
+                     view_renderer='templates/create_test.pt')
+    config.add_route('question', '/question', view='pyquiz.views.view_question',
+                     view_renderer='templates/question.pt')
+    config.add_route('test', '/test', view='pyquiz.views.view_test',
                      view_renderer='templates/test.pt')
-    config.add_route('submit', '/submit', view='pyquiz.views.submit_test',
-                     view_renderer='templates/submit.pt')
-    config.add_route('grade', '/grade', view='pyquiz.views.grade_test',
-                     view_renderer='templates/grade.pt')
+    config.add_route('grade', '/grade', view='pyquiz.views.view_grade_test',
+                     view_renderer='templates/grade_test.pt')
     config.add_translation_dirs('pyquiz:locale', 'colander:locale', 'deform:locale')
     config.scan('pyquiz')
     return config.make_wsgi_app()
