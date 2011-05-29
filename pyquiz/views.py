@@ -141,6 +141,8 @@ def submit_test(request):
     all_questions = dbsession.query(Question).filter(
                                     Question.test_id==test.id).all()
     num_questions = len(all_questions)
+    if "current_test" not in request.session.keys():
+        request.session["current_test"] = {"name": test.name}
     current_test = request.session["current_test"]
     questions = []
     for i in range(num_questions):

@@ -10,11 +10,12 @@ class ViewTests(unittest.TestCase):
     def tearDown(self):
         testing.tearDown()
 
+
     def test_my_view(self):
         from pyquiz.views import my_view
         request = testing.DummyRequest()
         info = my_view(request)
-        self.assertEqual(info['project'], 'pyquiz')
+        print self.assertEqual(info['project'], 'pyquiz')
 
 
 class FunctionalTests(unittest.TestCase):
@@ -28,3 +29,4 @@ class FunctionalTests(unittest.TestCase):
     def test_root(self):
         response = self.testapp.get('/', status=200)
         self.assertEquals(response.lxml.xpath('id("right")/h2/text()')[0], 'Pyramid links')
+
