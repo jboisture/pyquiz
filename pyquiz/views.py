@@ -83,6 +83,7 @@ def my_view(request):
 
 def test(request):
     test_id = int(request.GET["id"])
+    quesiton_num = 1
     try:
         question_num = int(request.GET["question"])
     except:
@@ -94,6 +95,13 @@ def test(request):
     all_questions = dbsession.query(Question).filter(
                                     Question.test_id==test.id).all()
     total_questions = len(all_questions)
+    session = request.session
+    user_choice = ''
+    if "current_test" not in session.keys() or (
+                      session["current_test"]["name"] != test.name):
+            session["current_test"] = {"name": test.name}
+    if str(question_num) in session['current_test'].keys():
+        user_choice = session['current_test'][str(question_num)]
     for q in all_questions:
         if q.question_num == question_num:
             question = q
@@ -102,10 +110,6 @@ def test(request):
     post = request.POST
     if 'review test' in post or 'next question' in post:
         controls = post.items()
-        session = request.session
-        if "current_test" not in session.keys() or (
-                          session["current_test"]["name"] != test.name):
-            session["current_test"] = {"name": test.name}
         answer = "na"
         i = 0
         for control in controls:
@@ -124,7 +128,8 @@ def test(request):
         answer = colander.SchemaNode(
             colander.String(),
             validator=colander.OneOf([x[0] for x in choices]),
-            widget=deform.widget.RadioChoiceWidget(values=choices),
+            widget=deform.widget.RadioChoiceWidget(values=choices, 
+                                                   null_value = user_choice),
             title=question.question,
             description="Choose you're answer")
     schema = QuestionForm()
