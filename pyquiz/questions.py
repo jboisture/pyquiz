@@ -180,6 +180,7 @@ def parse_edit_form_data(controls, dbsession, question):
                     if remove:
                         dbsession.delete(answer)
                         dbsession.flush()
+                        if correct: num_correct -= 1
                     elif (answer.answer[3:] != answerText or
                                answer.correct != correct):
                         answer.question_id = question.id
