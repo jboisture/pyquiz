@@ -7,6 +7,7 @@ from pyquiz.models import Test, Question, Answer
 import colander
 import deform
 
+
 options = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
            'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 
@@ -161,7 +162,7 @@ def parse_edit_form_data(controls, dbsession, question):
     answers = dbsession.query(Answer).filter(
                           Answer.question_id==question.id).all()
     num_correct = 0
-    while running: #loop used to traverse the controls creating tests,
+    while c < len(controls): #loop used to traverse the controls creating tests,
                    #questions,and answers
         if (controls[c] == ('__start__', u'answers:mapping')
                              and foundQuestion):
@@ -216,8 +217,6 @@ def parse_edit_form_data(controls, dbsession, question):
                 dbsession.flush()
         if controls[c] == ('__end__', u'short_answer_questions:sequence'):
             short_answer = False
-                
-        if controls[c][0] == 'submit changes': running = False
         c += 1
     question = dbsession.query(Question).filter(
                                Question.id==question.id).first()
@@ -230,6 +229,43 @@ def parse_edit_form_data(controls, dbsession, question):
             dbsession.flush()
 
 
+def parse_add_form_data(controls, dbsession, question_num, test):
+    """
+    This function parses the controls from the test creation form
+    and puts the newly created test, questions, and answers into
+    the database.
+    """
+    running = True
+    foundTest = False
+    short_answer = False
+    c = 0
+    while c < len(controls): #loop used to traverse the controls creating tests,
+                             #questions,and answers
+        if controls[c] == ( "__start__", u'questions:mapping'):
+            question_type = find_question_type(controls, c+1)
+            question_num += 1
+            question = create_question(controls, c, question_type, 
+                            test.id, question_num, dbsession)
+            answer_num = 1
+        if controls[c] == ('__start__', u'answers:mapping'):
+            create_answer(controls, c, question,
+                          answer_num, dbsession)
+            answer_num += 1
+        if controls[c] == ('__start__',u'short_answer_questions:sequence'):
+            short_answer = True
+            question_num -= 1
+        if controls[c][0] == 'text' and short_answer:
+            question_num += 1
+            create_question(controls, c, "shortAnswer", 
+                            test.id, question_num, dbsession) 
+        if controls[c] == ('__end__', u'short_answer_questions:sequence'):
+            short_answer = False
+        c += 1
+                
+
+
+
+
 
 def parse_form_data(controls, dbsession):
     """
@@ -240,7 +276,8 @@ def parse_form_data(controls, dbsession):
     running = True
     foundTest = False
     c = 0
-    while running: #loop used to traverse the controls creating tests,
+    short_answer = False
+    while c < len(controls): #loop used to traverse the controls creating tests,
                    #questions,and answers
         if controls[c][0] == "name" and controls[c+1][0] == "class_id":
             testname = str(controls[c][1])
@@ -250,7 +287,6 @@ def parse_form_data(controls, dbsession):
             dbsession.flush()
             foundTest = True
             question_num = 0
-            short_answer = False
             answer_num = 1
         if foundTest:
             if controls[c] == ( "__start__", u'questions:mapping'):
@@ -272,7 +308,5 @@ def parse_form_data(controls, dbsession):
                                 newTest.id, question_num, dbsession) 
             if controls[c] == ('__end__', u'short_answer_questions:sequence'):
                 short_answer = False
-                
-        if controls[c][0] == 'submit': running = False
         c += 1
 

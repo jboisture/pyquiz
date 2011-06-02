@@ -1,0 +1,34 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>
+   Pyquiz
+</title>
+<!-- Meta Tags -->
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<!-- JavaScript -->
+<script type="text/javascript" 
+          src="static/scripts/jquery.maskedinput-1.2.2.min.js"></script>
+<script type="text/javascript" src="static/scripts/deform.js"></script>
+<script type="text/javascript"
+          src="static/scripts/jquery-1.4.2.min.js"></script>
+<!-- CSS -->
+<link rel="stylesheet" href="static/css/form.css" type="text/css" />
+<link rel="stylesheet" href="static/css/theme.css" type="text/css" />
+</head>
+<body id="public">
+  <div>
+    <div/>
+    <h1>${message[0]}</h1>
+    <h3>${message[1]}</h3>
+    <h3>${message[2]}</h3>
+    <span tal:replace="structure form"/>
+    <script type="text/javascript">
+      jQuery(function() {
+         deform.load();
+         });
+    </script>
+  </div>
+</body>
+</html>

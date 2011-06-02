@@ -6,7 +6,12 @@ the pages of pyquiz.
 from pyramid.request import Request
 from pyramid.httpexceptions import HTTPFound
 
-from schema import TestSchema, EditQuestionSchema, EditShortAnswerQuestionSchema
+from schema import TestSchema, EditQuestionSchema
+from schema import EditShortAnswerQuestionSchema, AddQuestionsSchema
+
+from colander import MappingSchema
+from colander import SchemaNode
+from colander import String
 
 import colander
 
@@ -33,6 +38,23 @@ def view_create_test(request):
         return HTTPFound(location='/') #redirect to homepage
     return {'form':myform.render()}
 
+def view_add_questions(request):
+    test_id = int(request.GET["id"])
+    dbsession = DBSession()
+    test = dbsession.query(Test).filter(Test.id==test_id).first()
+    answers = dbsession.query(Question).filter(Question.test_id == test.id).all()
+    question_num = len(answers)
+    post = request.POST
+    if 'add questions' in post:
+        controls = request.POST.items() # get the data from the form
+        parse_add_form_data(controls, dbsession, question_num, test)
+        return HTTPFound(location='/edit_test?id='+str(test_id)) #redirect to homepage
+    schema = AddQuestionsSchema()
+    myform = Form(schema, buttons=('add questions',), 
+                  use_ajax=True)
+    return {'form':myform.render()}
+    
+
 def view_edit_question(request):
     ###load the question number and test id###
     test_id = int(request.GET["id"])
@@ -41,8 +63,6 @@ def view_edit_question(request):
         question_num = int(request.GET["question"])
     except:
         question_num = 1
-
-
 
     ###load the test and it's questions and their answers from the database###
     dbsession = DBSession()
@@ -76,8 +96,41 @@ def view_edit_question(request):
                   use_ajax=True)
     return {"test":test,'form':form.render(appstruct), 'question': question}
 
+def view_delete_test(request):
+    test_id = int(request.GET["id"])
+    dbsession = DBSession()
+    test = dbsession.query(Test).filter(Test.id == test_id).first()
+    post = request.POST
+    if 'no' in post:
+        return HTTPFound(location='/edit_test?id='+str(test.id))
+    if 'yes' in post:
+        questions = dbsession.query(Question).filter(
+                                    Question.test_id == test.id).all()
+        for question in questions:
+             answers = dbsession.query(Answer).filter(
+                                       Answer.question_id == question.id).all()
+             for answer in answers:
+                 dbsession.delete(answer)
+                 dbsession.flush()
+             dbsession.delete(question)
+             dbsession.flush()
+        dbsession.delete(test)
+        dbsession.flush()
+        return HTTPFound(location='/')
+    message = []
+    message.append("Are you sure you want to delete this test?")
+    message.append("Test: " + test.name)
+    message.append("Course: " + test.course)
+    class deleteForm(colander.Schema):
+        pass
+    schema = deleteForm()
+    form = deform.Form(schema, buttons=('yes','no'))
+    return {'form':form.render(), 'message':message}
+    
+
 def view_edit_test(request):
     test_id = int(request.GET["id"]) #get test id
+
 
     ###load test and questions from database###
     dbsession = DBSession()
@@ -86,6 +139,9 @@ def view_edit_test(request):
                                     Question.test_id==test.id).all()
     num_questions = len(all_questions)
 
+    delete_link = "/delete_test?id="+str(test.id)
+    add_link = "/add_questions?id="+str(test.id)
+
     ###create a list of questions, each question will be of the form###
     ###("question #: QUESTION STATUS", "/test?id=#;question#")###
     questions = []
@@ -93,7 +149,7 @@ def view_edit_test(request):
         questions.append(("question "+str(i+1),
                  "/edit_question?id="+str(test_id)+";question="+str(i+1)))
     
-    return {"test":test,"questions":questions}
+    return {"test":test,"questions":questions,'delete_link':delete_link,'add_link':add_link}
 
 def view_choose_test(request):
     """
@@ -206,6 +262,8 @@ def view_question(request):
         return {"test":test,'form':form.render(schema[1]),
                 'link':'/test?id='+str(test.id)}
     return {"test":test,'form':form.render(), 'link':'/test?id='+str(test.id)}
+
+    
 
 def view_test(request):
     """

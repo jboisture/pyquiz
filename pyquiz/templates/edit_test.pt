@@ -18,6 +18,8 @@
         <ul tal:repeat="question questions">
             <li><a href="${question[1]}">${question[0]}</a></li>
         </ul>
+        <a href="${add_link}">add questions</a><br/>
+        <a href="${delete_link}">delete test</a><br/>
         <a href="/">return home</a>
       </div>
     </div>

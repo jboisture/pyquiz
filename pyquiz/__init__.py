@@ -37,18 +37,30 @@ def main(global_config, **settings):
     config.add_route('create test', '/create_test',   
                      view='pyquiz.views.view_create_test',
                      view_renderer='templates/create_test.pt')
-    config.add_route('question', '/question', view='pyquiz.views.view_question',
+    config.add_route('question', '/question',            
+                     view='pyquiz.views.view_question',
                      view_renderer='templates/question.pt')
     config.add_route('test', '/test', view='pyquiz.views.view_test',
                      view_renderer='templates/test.pt')
     config.add_route('grade', '/grade', view='pyquiz.views.view_grade_test',
                      view_renderer='templates/grade_test.pt')
-    config.add_route('choose test', '/choose_test', view='pyquiz.views.view_choose_test',
+    config.add_route('choose test', '/choose_test', 
+                     view='pyquiz.views.view_choose_test',
                      view_renderer='templates/choose_test.pt')
-    config.add_route('edit test', '/edit_test', view='pyquiz.views.view_edit_test',
+    config.add_route('edit test', '/edit_test', 
+                     view='pyquiz.views.view_edit_test',
                      view_renderer='templates/edit_test.pt')
-    config.add_route('edit question', '/edit_question', view='pyquiz.views.view_edit_question',
+    config.add_route('edit question', '/edit_question', 
+                     view='pyquiz.views.view_edit_question',
                      view_renderer='templates/edit_question.pt')
-    config.add_translation_dirs('pyquiz:locale', 'colander:locale', 'deform:locale')
+    config.add_route('delete test', '/delete_test', 
+                     view='pyquiz.views.view_delete_test',
+                     view_renderer='templates/delete_test.pt')
+    config.add_route('add questions', '/add_questions', 
+                     view='pyquiz.views.view_add_questions',
+                     view_renderer='templates/add_questions.pt')
+    config.add_translation_dirs('pyquiz:locale', 
+                                'colander:locale',
+                                'deform:locale')
     config.scan('pyquiz')
     return config.make_wsgi_app()

@@ -86,6 +86,10 @@ class Questions(SequenceSchema):
     """
     questions = QuestionSchema()
 
+class AddQuestionsSchema(Schema):
+    questions = Questions()
+    short_answer_questions = ShortAnswerQuestions()
+
 class TestSchema(Schema):
     """
     Schema that stores the test being created.
