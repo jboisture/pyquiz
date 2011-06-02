@@ -11,10 +11,12 @@ class ViewTests(unittest.TestCase):
         testing.tearDown()
 
 
-    def test_my_view(self):
-        from pyquiz.views import my_view
+    def test_view_create_test(self):
+        from pyquiz.views import view_create_test
         request = testing.DummyRequest()
-        info = my_view(request)
+        info = view_create_test(request)
+        import pdb
+        pdb.set_trace()
         print self.assertEqual(info['project'], 'pyquiz')
 
 

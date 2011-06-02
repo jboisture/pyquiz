@@ -6,7 +6,7 @@ the pages of pyquiz.
 from pyramid.request import Request
 from pyramid.httpexceptions import HTTPFound
 
-from schema import TestSchema
+from schema import TestSchema, EditQuestionSchema, EditShortAnswerQuestionSchema
 
 import colander
 
@@ -33,6 +33,78 @@ def view_create_test(request):
         return HTTPFound(location='/') #redirect to homepage
     return {'form':myform.render()}
 
+def view_edit_question(request):
+    ###load the question number and test id###
+    test_id = int(request.GET["id"])
+    quesiton_num = 1
+    try:
+        question_num = int(request.GET["question"])
+    except:
+        question_num = 1
+
+
+
+    ###load the test and it's questions and their answers from the database###
+    dbsession = DBSession()
+    test = dbsession.query(Test).filter(Test.id==test_id).first()
+    all_questions = dbsession.query(Question).filter(
+                                    Question.test_id==test.id).all()
+    total_questions = len(all_questions)
+    for q in all_questions:
+        if q.question_num == question_num:
+            question = q
+
+    post = request.POST
+    if 'submit changes' in post:
+        controls = post.items()
+        parse_edit_form_data(controls, dbsession, question)
+        return HTTPFound(location='/edit_test?id='+str(test.id))
+
+    if (question.question_type == "multipleChoice" or
+        question.question_type == "selectTrue"):
+        all_answers = dbsession.query(Answer).filter(
+                                       Answer.question_id==question.id).all()
+        answers = []
+        for answer in all_answers:
+            answers.append({"text":answer.answer[3:],'correct':answer.correct})
+        schema = EditQuestionSchema()
+        appstruct = {'text':(question.question),'answers':answers}
+    if question.question_type == "shortAnswer":
+        schema = EditShortAnswerQuestionSchema()
+        appstruct = {'text':(question.question)}
+    form = Form(schema, buttons=('submit changes',), 
+                  use_ajax=True)
+    return {"test":test,'form':form.render(appstruct), 'question': question}
+
+def view_edit_test(request):
+    test_id = int(request.GET["id"]) #get test id
+
+    ###load test and questions from database###
+    dbsession = DBSession()
+    test = dbsession.query(Test).filter(Test.id==test_id).first()
+    all_questions = dbsession.query(Question).filter(
+                                    Question.test_id==test.id).all()
+    num_questions = len(all_questions)
+
+    ###create a list of questions, each question will be of the form###
+    ###("question #: QUESTION STATUS", "/test?id=#;question#")###
+    questions = []
+    for i in range(num_questions):
+        questions.append(("question "+str(i+1),
+                 "/edit_question?id="+str(test_id)+";question="+str(i+1)))
+    
+    return {"test":test,"questions":questions}
+
+def view_choose_test(request):
+    """
+    View that controls page used to select a test to edit
+    """
+    dbsession = DBSession()
+    tests = dbsession.query(Test).all()
+    for test in tests: 
+        test.url = "edit_test?id="+str(test.id) #create url for each test to pass to 
+                                           #the template
+    return {'tests':tests, 'project':'pyquiz'}
 
 
 def view_index(request):
@@ -48,6 +120,7 @@ def view_index(request):
         test.url = "test?id="+str(test.id) #create url for each test to pass to 
                                            #the template
     return {'tests':tests, 'project':'pyquiz'}
+
 
 
 
@@ -91,15 +164,19 @@ def view_question(request):
         controls = post.items()
         answer = "na"
         i = 0
+        if question.question_type == "shortAnswer":
+            for control in controls:
+                if control[0] == 'answer':
+                    answer = str(control[1])
         if question.question_type == "multipleChoice":
             for control in controls:
-               if control[0] == 'deformField1':
-                   answer = str(control[1])
+                if control[0] == 'deformField1':
+                    answer = str(control[1])
         if question.question_type == "selectTrue":
             answer = []
             for control in controls:
-               if control[0] == 'checkbox':
-                   answer.append(control[1])
+                if control[0] == 'checkbox':
+                    answer.append(control[1])
         session["current_test"][str(question_num)]=answer #store selected answer
         if 'next question' in post:
             return HTTPFound(location='/question?id='+str(test.id)+
@@ -113,21 +190,28 @@ def view_question(request):
         schema = create_multiple_choice_form(question, 
                                        dbsession, user_choice)
     if question.question_type == "selectTrue":
-        schema = create_select_true_form(question,
+        schema = create_select_all_form(question,
                                        dbsession, user_choice)
-    if question_num == total_questions: #check if this is the last question
-        form = deform.Form(schema, buttons=('review test',))
-    else:
-        form = deform.Form(schema, buttons=('next question',))
+    if question.question_type == "shortAnswer":
+        schema = create_short_answer_form(question, dbsession, user_choice)
 
-    return {"test":test,'form':form.render(),'link':'/test?id='+str(test.id)}
+
+    if question_num == total_questions: #check if this is the last question
+        form = deform.Form(schema[0],
+                           buttons=('review test',))
+    else:
+        form = deform.Form(schema[0],
+                           buttons=('next question',))
+    if question.question_type == "shortAnswer":
+        return {"test":test,'form':form.render(schema[1]),
+                'link':'/test?id='+str(test.id)}
+    return {"test":test,'form':form.render(), 'link':'/test?id='+str(test.id)}
 
 def view_test(request):
     """
     This view displays the submit page that shows and overview of the test
     and allows the test taker to submit the test for grading.
     """
-
     test_id = int(request.GET["id"]) #get test id
 
     ###load test and questions from database###
@@ -179,6 +263,7 @@ def view_grade_test(request):
 
     ###grade the test submitted test###
     correct = 0
+    num_graded = 0
     session = request.session
     question_messages = [] #quesiton_messages will contain reports for the
                            #template about if each quesiton is correct or not
@@ -189,15 +274,21 @@ def view_grade_test(request):
             for q in questions:
                 if q.question_num == i+1: question = q
             grade = grade_question(question, dbsession, user_answer)
-            if grade[0]:
-                correct += grade[1]
-                question_messages.append(str(i+1)+". Correct")
-            else: question_messages.append(str(i+1)+". INCORRECT")
+            if question.graded:
+                num_graded += 1
+                if grade[0]:
+                    correct += grade[1]
+                    question_messages.append(str(i+1)+". Correct")
+                else: question_messages.append(str(i+1)+". INCORRECT")
+            else: question_messages.append(str(i+1)+". Not Graded")
         else: question_messages.append(str(i+1)+". INCORRECT")
 
     ###create a report to display the result of the test###
-    message = "You got "+str(correct)+" out of "+str(num_questions)+" correct."
-    message = message + "(" + str(int(1000.0*correct/num_questions)/10.0) + "%)"
+    if num_graded > 0:
+        message ="You got "+str(correct)+" out of "+str(num_graded)+" correct."
+        message =message +"(" + str(int(1000.0*correct/num_graded)/10.0) + "%)"
+    else:
+        message="There were no graded questions."
     session.pop("current_test") #remove "current_test" from sesssion
 
     return {"test":test, "message":message,"questions":question_messages}

@@ -36,7 +36,23 @@ def grade_question(question, dbsession, user_answer):
                     user_correct += 1
         if total_correct == user_correct and user_correct == len(user_answer):
             return (True, 1)
+    if question.question_type == "shortAnswer":
+        answer = Answer(question.id, user_answer, None, "username")
+        dbsession.add(answer)
+        dbsession.flush
+        return (True, 1)
     return (False, 0)        
+
+def create_short_answer_form(question, dbsession, user_choice):
+    """create form to take a short answer question"""
+    class ShortAnswerSchema(colander.Schema):
+        answer = colander.SchemaNode(colander.String(),
+                                     title=question.question,
+                                     widget = deform.widget.TextInputWidget()
+                                     )
+    appstruct = {'answer':(user_choice)}
+    schema = ShortAnswerSchema()
+    return (schema, appstruct)
 
 def create_multiple_choice_form(question, dbsession, user_choice):
     """create form to take a multiple choice form"""
@@ -54,9 +70,10 @@ def create_multiple_choice_form(question, dbsession, user_choice):
                                                    null_value = user_choice),
             title=question.question,
             description="Choose you're answer")
-    return QuestionSchema() #create the schema for the form
 
-def create_select_true_form(question, dbsession, user_choices):
+    return (QuestionSchema(), None) #create the schema for the form
+
+def create_select_all_form(question, dbsession, user_choices):
     """create form to take a multiple choice form"""
     answers = dbsession.query(Answer).filter(
                       Answer.question_id==question.id).all()
@@ -64,7 +81,7 @@ def create_select_true_form(question, dbsession, user_choices):
     for answer in answers: #add all answers to choices so they are in the form
         choices.append((answer.option, answer.answer))
 
-    class SelectTrueQuestionSchema(colander.Schema):
+    class SelectAllQuestionSchema(colander.Schema):
         answer = colander.SchemaNode(
             deform.Set(),
             validator=colander.OneOf([x[0] for x in choices]),
@@ -72,7 +89,8 @@ def create_select_true_form(question, dbsession, user_choices):
                                                    null_values = user_choices),
             title=question.question,
             description="Choose you're answer")
-    return SelectTrueQuestionSchema().bind() #create the schema for the form
+    return (SelectAllQuestionSchema().bind(),None ) #create the schema for the 
+                                                    #form
 
 def create_answer(controls, index, question, answer_num, dbsession):
     """
@@ -100,6 +118,13 @@ def create_question(controls, index, question_type, test, number, dbsession):
         dbsession.add(question)
         dbsession.flush()
         return question
+    if question_type == "shortAnswer":
+        questionText = str(controls[index][1])
+        question = Question(False, question_type, questionText,
+                                   test, number)
+        dbsession.add(question)
+        dbsession.flush()
+        return None
     return None
 
 
@@ -121,6 +146,90 @@ def find_question_type(controls, i):
         if correct == 1: return "multipleChoice"
     return None
 
+def parse_edit_form_data(controls, dbsession, question):
+    """
+    This function parses the controls from the test creation form
+    and puts the newly created test, questions, and answers into
+    the database.
+    """
+    question_id = question.id
+    running = True
+    foundQuestion = False
+    c = 0
+    answer_num = 0
+    short_answer = False
+    answers = dbsession.query(Answer).filter(
+                          Answer.question_id==question.id).all()
+    num_correct = 0
+    while running: #loop used to traverse the controls creating tests,
+                   #questions,and answers
+        if (controls[c] == ('__start__', u'answers:mapping')
+                             and foundQuestion):
+            answerText = str(controls[c+1][1])
+            if controls[c+2][0] == 'correct': correct = True
+            else: correct = False
+            if controls[c+2][0] == 'remove' or controls[c+3][0] == 'remove':
+                remove = True
+            else: remove = False
+            answer_found = False
+            num_correct += correct
+            for answer in answers:
+                if answer.option == options[answer_num]:
+                    answer_found = True
+                    if remove:
+                        dbsession.delete(answer)
+                        dbsession.flush()
+                    elif (answer.answer[3:] != answerText or
+                               answer.correct != correct):
+                        answer.question_id = question.id
+                        answer.answer = options[answer_num]+". "+answerText
+                        answer.correct = correct
+                        dbsession.flush()
+            if not answer_found and not remove:
+                 answer = Answer(question.id, answerText,
+                                 correct, options[answer_num])
+                 dbsession.add(answer)
+                 dbsession.flush()
+            answer_num += 1
+        if (not foundQuestion and controls[c][0] == 'text'):
+            foundQuestion = True
+            text = controls[c][1]
+            if controls[c+1][0] == 'remove': remove = True
+            else: remove = False
+            if remove:
+                questions = dbsession.query(Question).filter(
+                                        Question.test_id == question.test_id)
+                answers = dbsession.query(Answer).filter(
+                                        Answer.question_id == question.id)
+                qNum = question.question_num
+                dbsession.delete(question)
+                dbsession.flush()
+                for answer in answers:
+                    dbsession.delete(question)
+                    dbsession.flush()
+                for question in questions:
+                    if question.question_num > qNum:
+                        question.question_num -= 1
+                        dbsession.flush()
+            elif text != question.question:
+                question.question = text
+                dbsession.flush()
+        if controls[c] == ('__end__', u'short_answer_questions:sequence'):
+            short_answer = False
+                
+        if controls[c][0] == 'submit changes': running = False
+        c += 1
+    question = dbsession.query(Question).filter(
+                               Question.id==question.id).first()
+    if question.question_type in ["multipleChoice", "selectTrue"]:
+        if num_correct == 1 and question.question_type != "multipleChoice":
+            question.question_type = "multipleChoice"
+            dbsession.flush()
+        if num_correct != 1 and question.question_type != "selectTrue":
+            question.question_type = "selectTrue"
+            dbsession.flush()
+
+
 
 def parse_form_data(controls, dbsession):
     """
@@ -130,7 +239,6 @@ def parse_form_data(controls, dbsession):
     """
     running = True
     foundTest = False
-    foundQuestion = False
     c = 0
     while running: #loop used to traverse the controls creating tests,
                    #questions,and answers
@@ -141,19 +249,30 @@ def parse_form_data(controls, dbsession):
             dbsession.add(newTest)
             dbsession.flush()
             foundTest = True
-            question_num = 1
+            question_num = 0
+            short_answer = False
+            answer_num = 1
         if foundTest:
             if controls[c] == ( "__start__", u'questions:mapping'):
                 question_type = find_question_type(controls, c+1)
-                question = create_question(controls, c, question_type, 
-                                newTest.id, question_num, dbsession) 
                 question_num += 1
-                foundQuestion = True
+                question = create_question(controls, c, question_type, 
+                                newTest.id, question_num, dbsession)
                 answer_num = 1
             if controls[c] == ('__start__', u'answers:mapping'):
-                answer = create_answer(controls, c, question,
-                                       answer_num, dbsession)
+                create_answer(controls, c, question,
+                              answer_num, dbsession)
                 answer_num += 1
+            if controls[c] == ('__start__',u'short_answer_questions:sequence'):
+                short_answer = True
+                question_num -= 1
+            if controls[c][0] == 'text' and short_answer:
+                question_num += 1
+                create_question(controls, c, "shortAnswer", 
+                                newTest.id, question_num, dbsession) 
+            if controls[c] == ('__end__', u'short_answer_questions:sequence'):
+                short_answer = False
+                
         if controls[c][0] == 'submit': running = False
         c += 1
 

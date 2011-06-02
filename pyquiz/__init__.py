@@ -43,6 +43,12 @@ def main(global_config, **settings):
                      view_renderer='templates/test.pt')
     config.add_route('grade', '/grade', view='pyquiz.views.view_grade_test',
                      view_renderer='templates/grade_test.pt')
+    config.add_route('choose test', '/choose_test', view='pyquiz.views.view_choose_test',
+                     view_renderer='templates/choose_test.pt')
+    config.add_route('edit test', '/edit_test', view='pyquiz.views.view_edit_test',
+                     view_renderer='templates/edit_test.pt')
+    config.add_route('edit question', '/edit_question', view='pyquiz.views.view_edit_question',
+                     view_renderer='templates/edit_question.pt')
     config.add_translation_dirs('pyquiz:locale', 'colander:locale', 'deform:locale')
     config.scan('pyquiz')
     return config.make_wsgi_app()

@@ -14,6 +14,37 @@ from deform import ValidationFailure
 from deform import Form
 from deform import widget
 
+class EditAnswerSchema(MappingSchema):
+    """
+    Schema that stores a single answer to a question.
+    """
+    text = SchemaNode(String())
+    correct = SchemaNode(Boolean())
+    remove = SchemaNode(Boolean())
+
+class EditAnswers(SequenceSchema):
+    """
+    Schema used to store the sequence AnswerSchema classes
+    for each quesiton in the test.
+    """
+    answers = EditAnswerSchema()
+
+class EditQuestionSchema(MappingSchema):
+    """
+    Schema that stores a single question to a test.
+    """
+    text = SchemaNode(String())
+    remove = SchemaNode(Boolean())
+    answers = EditAnswers()
+
+class EditShortAnswerQuestionSchema(MappingSchema):
+    """
+    Schema that stores a short answer question.  Does not have an answer.
+    """
+    text = SchemaNode(String())
+    remove = SchemaNode(Boolean())
+
+
 class AnswerSchema(MappingSchema):
     """
     Schema that stores a single answer to a question.
@@ -35,6 +66,19 @@ class QuestionSchema(MappingSchema):
     text = SchemaNode(String())
     answers = Answers()
 
+class ShortAnswerQuestionSchema(MappingSchema):
+    """
+    Schema that stores a short answer question.  Does not have an answer.
+    """
+    text = SchemaNode(String())
+
+class ShortAnswerQuestions(SequenceSchema):
+    """
+    Schema used to store the sequence of ShortANswerQuestionSchema
+    classes representing each short answer quesiton in the test.
+    """
+    questions = ShortAnswerQuestionSchema()
+
 class Questions(SequenceSchema):
     """
     Schema used to store the sequence of QuestionSchema
@@ -49,5 +93,6 @@ class TestSchema(Schema):
     name = SchemaNode(String())
     class_id = SchemaNode(String())
     questions = Questions()
+    short_answer_questions = ShortAnswerQuestions()
 
 
