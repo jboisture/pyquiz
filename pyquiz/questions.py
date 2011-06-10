@@ -19,10 +19,7 @@ def grade_question(question, dbsession, user_answer):
     where 1 is full credit and 0 is none.
     """
     if question.question_type == "multipleChoice":
-        answers = dbsession.query(Answer).filter(
-        Answer.question_id == question.id).all() #load answers
-        for a in answers: #find answer that user selected
-            if a.option == user_answer: answer = a
+        answer = dbsession.query(Answer).filter(Answer.id == user_answer).first() #load answers
         if answer.correct: #check if the selected answer is correct
             return (True, 1)
     if question.question_type == "selectTrue":
@@ -33,12 +30,12 @@ def grade_question(question, dbsession, user_answer):
         for a in answers: #find answer that user selected
             if a.correct:
                 total_correct += 1
-                if a.option in user_answer:
+                if str(a.id) in user_answer:
                     user_correct += 1
         if total_correct == user_correct and user_correct == len(user_answer):
             return (True, 1)
     if question.question_type == "shortAnswer":
-        answer = Answer(question.id, user_answer, None, "username")
+        answer = Answer(question.id, "username*:"+user_answer, None)
         dbsession.add(answer)
         dbsession.flush
         return (True, 1)
@@ -60,8 +57,10 @@ def create_multiple_choice_form(question, dbsession, user_choice):
     answers = dbsession.query(Answer).filter(
                       Answer.question_id==question.id).all()
     choices = []
+    sorted(answers, key=lambda answer: answer.id)
     for answer in answers: #add all answers to choices so they are in the form
-        choices.append((answer.option, answer.answer))
+        answer_text = options[answers.index(answer)]+". "+answer.answer
+        choices.append((answer.id, answer_text))
     class QuestionSchema(colander.Schema):
         """form class that defines the form used to display the question"""
         answer = colander.SchemaNode(
@@ -80,7 +79,8 @@ def create_select_all_form(question, dbsession, user_choices):
                       Answer.question_id==question.id).all()
     choices = []
     for answer in answers: #add all answers to choices so they are in the form
-        choices.append((answer.option, answer.answer))
+        answer_text = options[answers.index(answer)]+". "+answer.answer
+        choices.append((str(answer.id), answer_text))
 
     class SelectAllQuestionSchema(colander.Schema):
         answer = colander.SchemaNode(
@@ -101,7 +101,7 @@ def create_answer(controls, index, question, answer_num, dbsession):
     if controls[index+2][0] == 'correct': correct = True
     else: correct = False
     answer = Answer(question.id, answerText, 
-                    correct, options[answer_num-1])
+                    correct)
     dbsession.add(answer)
     dbsession.flush
     return answer
@@ -159,40 +159,43 @@ def parse_edit_form_data(controls, dbsession, question):
     c = 0
     answer_num = 0
     short_answer = False
-    answers = dbsession.query(Answer).filter(
-                          Answer.question_id==question.id).all()
     num_correct = 0
     while c < len(controls): #loop used to traverse the controls creating tests,
                    #questions,and answers
         if (controls[c] == ('__start__', u'answers:mapping')
                              and foundQuestion):
+            answers = dbsession.query(Answer).filter(
+                                      Answer.question_id==question.id).all()
+            sorted(answers, key=lambda answer: answer.id)
             answerText = str(controls[c+1][1])
             if controls[c+2][0] == 'correct': correct = True
             else: correct = False
             if controls[c+2][0] == 'remove' or controls[c+3][0] == 'remove':
                 remove = True
             else: remove = False
-            answer_found = False
             num_correct += correct
-            for answer in answers:
-                if answer.option == options[answer_num]:
+            if answer_num < len(answers)-1:
+                answer = answers[answer_num]
+                if (answers.index(answer) == answer_num):
                     answer_found = True
                     if remove:
                         dbsession.delete(answer)
                         dbsession.flush()
+                        answers.remove(answer)
                         if correct: num_correct -= 1
-                    elif (answer.answer[3:] != answerText or
-                               answer.correct != correct):
+                        answer_num -= 1
+                    elif (answer.answer != answerText or
+                                     answer.correct != correct):
                         answer.question_id = question.id
-                        answer.answer = options[answer_num]+". "+answerText
+                        answer.answer = answerText
                         answer.correct = correct
                         dbsession.flush()
-            if not answer_found and not remove:
+                    answer_num += 1
+            else:
                  answer = Answer(question.id, answerText,
-                                 correct, options[answer_num])
+                                 correct)
                  dbsession.add(answer)
                  dbsession.flush()
-            answer_num += 1
         if (not foundQuestion and controls[c][0] == 'text'):
             foundQuestion = True
             text = controls[c][1]

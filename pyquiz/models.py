@@ -71,15 +71,13 @@ class Answer(Base):
                                   #that the answer is associated with
     answer = Column(String) #stores the text of the answer
     correct = Column(Boolean) #stores whether or not the answer is correct
-    option = Column(String) #stores what option the answer will be in the     
-                            #question. ie. 'a','b','c', etc.
 
-    def __init__(self, question_id, answer, correct, option):
+
+    def __init__(self, question_id, answer, correct):
         """init funciton to create a new Answer object"""
         self.question_id = question_id
-        self.answer = option + ". " + answer
+        self.answer = answer
         self.correct = correct
-        self.option = option
 
 
 

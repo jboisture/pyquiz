@@ -86,7 +86,7 @@ def view_edit_question(request):
                                        Answer.question_id==question.id).all()
         answers = []
         for answer in all_answers:
-            answers.append({"text":answer.answer[3:],'correct':answer.correct})
+            answers.append({"text":answer.answer,'correct':answer.correct})
         schema = EditQuestionSchema()
         appstruct = {'text':(question.question),'answers':answers}
     if question.question_type == "shortAnswer":
