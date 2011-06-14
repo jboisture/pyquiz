@@ -174,7 +174,7 @@ def parse_edit_form_data(controls, dbsession, question):
                 remove = True
             else: remove = False
             num_correct += correct
-            if answer_num < len(answers)-1:
+            if answer_num < len(answers):
                 answer = answers[answer_num]
                 if (answers.index(answer) == answer_num):
                     answer_found = True
