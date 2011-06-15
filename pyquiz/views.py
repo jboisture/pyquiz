@@ -315,7 +315,7 @@ def view_grade_test(request):
 
     ###create the "current_test" in session if it is not already there###
     if "current_test" not in request.session.keys():
-        request.session["current_test"] = {"name": test.name}
+        return HTTPFound(location='/test?id='+str(test.id))
     current_test = request.session["current_test"]
 
     ###grade the test submitted test###
@@ -324,21 +324,20 @@ def view_grade_test(request):
     session = request.session
     question_messages = [] #quesiton_messages will contain reports for the
                            #template about if each quesiton is correct or not
-    for i in range(num_questions): #loop through and grade each question
-        if str(i+1) in current_test.keys(): #make sure user selected
+    for question in questions:#loop through and grade each question
+        if question.graded: num_graded += 1
+        q_num = question.question_num
+        if str(q_num) in current_test.keys(): #make sure user selected
                                             #an answer to the question
-            user_answer=current_test[str(i+1)]#get users answer for the question
-            for q in questions:
-                if q.question_num == i+1: question = q
+            user_answer=current_test[str(q_num)]#get users answer for the question
             grade = grade_question(question, dbsession, user_answer)
             if question.graded:
-                num_graded += 1
                 if grade[0]:
                     correct += grade[1]
-                    question_messages.append(str(i+1)+". Correct")
-                else: question_messages.append(str(i+1)+". INCORRECT")
-            else: question_messages.append(str(i+1)+". Not Graded")
-        else: question_messages.append(str(i+1)+". INCORRECT")
+                    question_messages.append(str(q_num)+". Correct")
+                else: question_messages.append(str(q_num)+". INCORRECT")
+            else: question_messages.append(str(q_num)+". Not Graded")
+        else: question_messages.append(str(q_num)+". INCORRECT")
 
     ###create a report to display the result of the test###
     if num_graded > 0:

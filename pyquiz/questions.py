@@ -203,15 +203,15 @@ def parse_edit_form_data(controls, dbsession, question):
             else: remove = False
             if remove:
                 questions = dbsession.query(Question).filter(
-                                        Question.test_id == question.test_id)
+                                  Question.test_id == question.test_id).all()
                 answers = dbsession.query(Answer).filter(
-                                        Answer.question_id == question.id)
-                qNum = question.question_num
-                dbsession.delete(question)
-                dbsession.flush()
+                                  Answer.question_id == question.id).all()
                 for answer in answers:
                     dbsession.delete(answer)
                     dbsession.flush()
+                qNum = question.question_num
+                dbsession.delete(question)
+                dbsession.flush()
                 for question in questions:
                     if question.question_num > qNum:
                         question.question_num -= 1
@@ -219,8 +219,6 @@ def parse_edit_form_data(controls, dbsession, question):
             elif text != question.question:
                 question.question = text
                 dbsession.flush()
-        if controls[c] == ('__end__', u'short_answer_questions:sequence'):
-            short_answer = False
         c += 1
     question = dbsession.query(Question).filter(
                                Question.id==question.id).first()
