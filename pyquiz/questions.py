@@ -157,16 +157,16 @@ def parse_edit_form_data(controls, dbsession, question):
     running = True
     foundQuestion = False
     c = 0
-    answer_num = 0
     short_answer = False
     num_correct = 0
+    num = 0
+    n = len(dbsession.query(Answer).filter(Answer.question_id==question.id).all())
+    answers = dbsession.query(Answer).filter(Answer.question_id==question.id).all()
+    sorted(answers, key=lambda answer: answer.id)
     while c < len(controls): #loop used to traverse the controls creating tests,
                    #questions,and answers
         if (controls[c] == ('__start__', u'answers:mapping')
                              and foundQuestion):
-            answers = dbsession.query(Answer).filter(
-                                      Answer.question_id==question.id).all()
-            sorted(answers, key=lambda answer: answer.id)
             answerText = str(controls[c+1][1])
             if controls[c+2][0] == 'correct': correct = True
             else: correct = False
@@ -174,28 +174,28 @@ def parse_edit_form_data(controls, dbsession, question):
                 remove = True
             else: remove = False
             num_correct += correct
-            if answer_num < len(answers):
-                answer = answers[answer_num]
-                if (answers.index(answer) == answer_num):
-                    answer_found = True
-                    if remove:
-                        dbsession.delete(answer)
-                        dbsession.flush()
-                        answers.remove(answer)
-                        if correct: num_correct -= 1
-                        answer_num -= 1
-                    elif (answer.answer != answerText or
-                                     answer.correct != correct):
-                        answer.question_id = question.id
-                        answer.answer = answerText
-                        answer.correct = correct
-                        dbsession.flush()
-                    answer_num += 1
-            else:
-                 answer = Answer(question.id, answerText,
-                                 correct)
-                 dbsession.add(answer)
-                 dbsession.flush()
+            if num < n:
+                answer = answers[num]
+                answer_found = True
+                if remove:
+                    dbsession.delete(answer)
+                    dbsession.flush()
+                    answers.remove(answer)
+                    if correct: num_correct -= 1
+                    num -= 1
+                    n -= 1
+                elif (answer.answer != answerText or
+                                  answer.correct != correct):
+                    answer.question_id = question.id
+                    answer.answer = answerText
+                    answer.correct = correct
+                    dbsession.flush()
+                num += 1
+            elif not remove:
+                answer = Answer(question.id, answerText,
+                                correct)
+                dbsession.add(answer)
+                dbsession.flush()
         if (not foundQuestion and controls[c][0] == 'text'):
             foundQuestion = True
             text = controls[c][1]
@@ -210,7 +210,7 @@ def parse_edit_form_data(controls, dbsession, question):
                 dbsession.delete(question)
                 dbsession.flush()
                 for answer in answers:
-                    dbsession.delete(question)
+                    dbsession.delete(answer)
                     dbsession.flush()
                 for question in questions:
                     if question.question_num > qNum:

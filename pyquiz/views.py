@@ -167,9 +167,8 @@ def view_index(request):
     """
     View associated with the home page of the app.
     """
-    session = request.session
-    if 'current_test' in session.keys(): 
-        session.pop("current_test") #remove current_test from session
+    if 'current_test' in request.session.keys(): 
+        request.session.pop('current_test') #remove current_test from session
     dbsession = DBSession()
     tests = dbsession.query(Test).all() #load all tests
     for test in tests: 
