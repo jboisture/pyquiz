@@ -19,7 +19,8 @@ def grade_question(question, dbsession, user_answer):
     where 1 is full credit and 0 is none.
     """
     if question.question_type == "multipleChoice":
-        answer = dbsession.query(Answer).filter(Answer.id == user_answer).first() #load answers
+        answer = dbsession.query(Answer).filter(
+                            Answer.id == user_answer).first() #load answers
         if answer.correct: #check if the selected answer is correct
             return (True, 1)
     if question.question_type == "selectTrue":
@@ -160,10 +161,12 @@ def parse_edit_form_data(controls, dbsession, question):
     short_answer = False
     num_correct = 0
     num = 0
-    n = len(dbsession.query(Answer).filter(Answer.question_id==question.id).all())
-    answers = dbsession.query(Answer).filter(Answer.question_id==question.id).all()
+    n = len(dbsession.query(Answer).filter(
+                            Answer.question_id==question.id).all())
+    answers = dbsession.query(Answer).filter(
+                            Answer.question_id==question.id).all()
     sorted(answers, key=lambda answer: answer.id)
-    while c < len(controls): #loop used to traverse the controls creating tests,
+    while c < len(controls):#loop used to traverse the controls creating tests,
                    #questions,and answers
         if (controls[c] == ('__start__', u'answers:mapping')
                              and foundQuestion):
@@ -241,7 +244,7 @@ def parse_add_form_data(controls, dbsession, question_num, test):
     foundTest = False
     short_answer = False
     c = 0
-    while c < len(controls): #loop used to traverse the controls creating tests,
+    while c < len(controls):#loop used to traverse the controls creating tests,
                              #questions,and answers
         if controls[c] == ( "__start__", u'questions:mapping'):
             question_type = find_question_type(controls, c+1)
@@ -279,7 +282,7 @@ def parse_form_data(controls, dbsession):
     foundTest = False
     c = 0
     short_answer = False
-    while c < len(controls): #loop used to traverse the controls creating tests,
+    while c < len(controls):#loop used to traverse the controls creating tests,
                    #questions,and answers
         if controls[c][0] == "name" and controls[c+1][0] == "class_id":
             testname = str(controls[c][1])

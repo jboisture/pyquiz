@@ -4,95 +4,7 @@ from pyramid import testing
 from models import Test, Question, Answer, initialize_sql
 from webob.multidict import MultiDict
 
-selectTrueData = [('_charset_', u'UTF-8'), ('__formid__', u'deform'), ('name', u'Math Test'), 
-                  ('class_id', u'Math 101'), ('__start__', u'questions:sequence'), ('__start__', u'questions:mapping'),
-                  ('text', u'1+1 = ?'), ('__start__', u'answers:sequence'), ('__start__', u'answers:mapping'), 
-                  ('text', u'1'), ('correct', u'true'), ('__end__', u'answers:mapping'), 
-                  ('__start__', u'answers:mapping'), ('text', u'2'), ('correct', u'true'),
-                  ('__end__', u'answers:mapping'), ('__end__', u'answers:sequence'), 
-                  ('__end__', u'questions:mapping'), ('__end__', u'questions:sequence'), 
-                  ('__start__', u'short_answer_questions:sequence'), ('__end__', u'short_answer_questions:sequence'),
-                  ('submit', u'submit')]
-
-multipleChoiceData = [('_charset_', u'UTF-8'), ('__formid__', u'deform'), ('name', u'Math Test'), 
-                      ('class_id', u'Math 101'), ('__start__', u'questions:sequence'), ('__start__', u'questions:mapping'),
-                      ('text', u'1+1 = ?'), ('__start__', u'answers:sequence'), ('__start__', u'answers:mapping'), 
-                      ('text', u'1'), ('__end__', u'answers:mapping'), ('__start__', u'answers:mapping'), ('text', u'2'), 
-                      ('correct', u'true'), ('__end__', u'answers:mapping'), ('__end__', u'answers:sequence'), 
-                      ('__end__', u'questions:mapping'), ('__end__', u'questions:sequence'), 
-                      ('__start__', u'short_answer_questions:sequence'), ('__end__', u'short_answer_questions:sequence'),
-                      ('submit', u'submit')]
-
-shortAnswerData = [('_charset_', u'UTF-8'), ('__formid__', u'deform'),
-                   ('name', u'Short Answer'), ('class_id', u'Test'),
-                   ('__start__', u'questions:sequence'), ('__end__', u'questions:sequence'),
-                   ('__start__', u'short_answer_questions:sequence'), ('__start__', u'questions:mapping'),
-                   ('text', u"What is you're name?"), ('__end__', u'questions:mapping'),
-                   ('__end__', u'short_answer_questions:sequence'), ('submit', u'submit')]
-
-allTypesData = [('_charset_', u'UTF-8'), ('__formid__', u'deform'), ('name', u'All Types'),
-                ('class_id', u'Math 101'), ('__start__', u'questions:sequence'),
-                ('__start__', u'questions:mapping'), ('text', u'1+1 = ?'), ('__start__', u'answers:sequence'),
-                ('__start__', u'answers:mapping'), ('text', u'1'), ('__end__', u'answers:mapping'),
-                ('__start__', u'answers:mapping'), ('text', u'2'), ('correct', u'true'),
-                ('__end__', u'answers:mapping'), ('__end__', u'answers:sequence'), ('__end__', u'questions:mapping'),
-                ('__start__', u'questions:mapping'), ('text', u'x^2 = 1'), ('__start__', u'answers:sequence'),
-                ('__start__', u'answers:mapping'), ('text', u'-1'), ('correct', u'true'),
-                ('__end__', u'answers:mapping'), ('__start__', u'answers:mapping'), ('text', u'1'), ('correct', u'true'),
-                ('__end__', u'answers:mapping'), ('__start__', u'answers:mapping'), ('text', u'2'),
-                ('__end__', u'answers:mapping'), ('__end__', u'answers:sequence'), ('__end__', u'questions:mapping'),
-                ('__end__', u'questions:sequence'), ('__start__', u'short_answer_questions:sequence'),
-                ('__start__', u'questions:mapping'), ('text', u"What is you're name?"), ('__end__', u'questions:mapping'),
-                ('__end__', u'short_answer_questions:sequence'), ('submit', u'submit')]
-
-addQuestionsData = [('_charset_', u'UTF-8'), ('__formid__', u'deform'), ('__start__', u'questions:sequence'),
-                    ('__start__', u'questions:mapping'), ('text', u'2+2 = ?'), ('__start__', u'answers:sequence'),
-                    ('__start__', u'answers:mapping'), ('text', u'3'), ('__end__', u'answers:mapping'),
-                    ('__start__', u'answers:mapping'), ('text', u'4'), ('correct', u'true'), ('__end__', u'answers:mapping'),
-                    ('__end__', u'answers:sequence'), ('__end__', u'questions:mapping'), ('__start__', u'questions:mapping'),
-                    ('text', u'X^2 = 4'), ('__start__', u'answers:sequence'), ('__start__', u'answers:mapping'),
-                    ('text', u'-2'), ('correct', u'true'), ('__end__', u'answers:mapping'), ('__start__', u'answers:mapping'),
-                    ('text', u'2'), ('correct', u'true'), ('__end__', u'answers:mapping'), ('__start__', u'answers:mapping'),
-                    ('text', u'3'), ('__end__', u'answers:mapping'), ('__end__', u'answers:sequence'),
-                    ('__end__', u'questions:mapping'), ('__end__', u'questions:sequence'), ('__start__', u'short_answer_questions:sequence'),
-                    ('__start__', u'questions:mapping'), ('text', u'Who are you?'), ('__end__', u'questions:mapping'),
-                    ('__end__', u'short_answer_questions:sequence'), ('add questions', u'add questions')]
-
-editMultipleChoiceData = [('_charset_', u'UTF-8'), ('__formid__', u'deform'), ('text', u'X^2 = 4'), 
-                          ('__star t__', u'answers:sequence'), ('__start__', u'answers:mapping'), ('text', u'1'),
-                          ('remove', u'true'), ('__end__', u'answers:mapping'), ('__start__', u'answers:mapping'),
-                          ('text', u'2'), ('correct', u'true'), ('remove', u'true'), ('__end__', u'answers:mapping'),
-                          ('__start__', u'answers:mapping'), ('text', u'X = -2'), ('correct', u'true'), ('__end__', u'answers:mapping'),
-                          ('__start__', u'answers:mapping'), ('text', u'4'), ('remove', u'true'), ('__end__', u'answers:mapping'),
-                          ('__start__', u'answers:mapping'), ('text', u'X = 2'), ('correct', u'true'), ('__end__', u'answers:mapping'),
-                          ('__start__', u'answers:mapping'), ('text', u'6'), ('remove', u'true'), ('__end__', u'answers:mapping'),
-                          ('__start__', u'answers:mapping'), ('text', u'X = 3'), ('__end__', u'answers:mapping'),
-                          ('__start__', u'answers:mapping'), ('text', u'X = 4'), ('__end__', u'answers:mapping'),
-                          ('__end__', u'answers:sequence'), ('submit changes', u'submit changes')]
-
-editSelectTrueData = [('_charset_', u'UTF-8'), ('__formid__', u'deform'), ('text', u'1+1=?'), ('__start_ _', u'answers:sequence'),
-                      ('__start__', u'answers:mapping'), ('text', u'1'), ('__end__', u'answers:mapping'),
-                      ('__start__', u'answers:mapping'), ('text', u'1'), ('correct', u'true'), ('remove', u'true'),
-                      ('__end__', u'answers:mapping'), ('__start__', u'answers:mapping'), ('text', u'2'), ('correct', u'true'),
-                      ('__end__', u'answers:mapping'), ('__start__', u'answers:mapping'), ('text', u'3'),
-                      ('__end__', u'answers:mapping'), ('__start__', u'answers:mapping'), ('text', u'4'), ('remove', u'true'),
-                      ('__end__', u'answers:mapping'), ('__start__', u'answers:mapping'), ('text', u'4'),
-                      ('__end__', u'answers:mapping'), ('__end__', u'answers:sequence'), ('submit changes', u'submit changes')]
-
-editShortAnswerData = [('_charset_', u'UTF-8'), ('__formid__', u'deform'), ('text', u'Who are you?'), ('submit changes', u'submit changes')]
-
-editRemoveQuestionData = [('_charset_', u'UTF-8'), ('__formid__', u'deform'), ('text', u'Who are you?'),
-                          ('remove', u'true'), ('submit changes', u'submit changes')]
-
-answerMultipleChoiceData = [('_charset_', u'UTF-8'), ('__formid__', u'deform'), ('__start__', u'answer:rename' ),
-                            ('deformField1', u'2'), ('__end__', u''), ('next question', u'next question')]
-
-answerSelectTrueData = [('_charset_', u'UTF-8'), ('__formid__', u'deform'), ('__start__', u'answer:sequenc e'),
-                        ('checkbox', u'7'), ('checkbox', u'8'), ('__end__', u'answer:sequence'),
-                        ('next question', u'next question')]
-
-answerShortAnswerData = [('_charset_', u'UTF-8'), ('__formid__', u'deform'),
-                         ('answer', u'James Boisture'), ('review test', u'review test')]
+from testingData import *
 
 
 
@@ -173,7 +85,10 @@ def _populateDB(session):
     answer = Answer(question.id, "5", False)
     session.add(answer)
     session.flush()
-    question = Question(False, "shortAnswer", "What is you're name?", test.id, 3)
+    question = Question(False, 
+                        "shortAnswer",
+                        "What is you're name?", 
+                        test.id, 3)
     session.add(question)
     session.flush()
 
@@ -215,7 +130,7 @@ class ViewCeateTest(unittest.TestCase):
         self.assertTrue(answers[1].correct)
         _clearTestingDB(self.session)
 
-        ###Test creating a selectTrue question with more than one correct answer###
+    ###Test creating a selectTrue question with more than one correct answer###
         request = testing.DummyRequest(_createFormData(selectTrueData))
         info = view_create_test(request)
         tests = self.session.query(Test).all()
@@ -236,7 +151,7 @@ class ViewCeateTest(unittest.TestCase):
         self.assertTrue(answers[1].correct)
         _clearTestingDB(self.session)
 
-        ###Test creating a shortAnswer question with more than one correct answer###
+    ###Test creating a shortAnswer question with more than one correct answer##
         request = testing.DummyRequest(_createFormData(shortAnswerData))
         info = view_create_test(request)
         tests = self.session.query(Test).all()
@@ -270,14 +185,16 @@ class ViewCeateTest(unittest.TestCase):
         self.assertEqual(1, questions[0].id)
         self.assertEqual(2, questions[1].id)
         self.assertEqual(3, questions[2].id)
-        answers = self.session.query(Answer).filter(Answer.question_id==questions[0].id).all()
+        answers = self.session.query(Answer).filter(
+                                    Answer.question_id==questions[0].id).all()
         self.assertEqual(1, answers[0].id)
         self.assertEqual(2, answers[1].id)
         self.assertEqual("1", answers[0].answer)
         self.assertEqual("2", answers[1].answer)
         self.assertFalse(answers[0].correct)
         self.assertTrue(answers[1].correct)
-        answers = self.session.query(Answer).filter(Answer.question_id==questions[1].id).all()
+        answers = self.session.query(Answer).filter(
+                                    Answer.question_id==questions[1].id).all()
         self.assertEqual(3, answers[0].id)
         self.assertEqual(4, answers[1].id)
         self.assertEqual(5, answers[2].id)
@@ -287,7 +204,8 @@ class ViewCeateTest(unittest.TestCase):
         self.assertTrue(answers[0].correct)
         self.assertTrue(answers[1].correct)
         self.assertFalse(answers[2].correct)
-        answers = self.session.query(Answer).filter(Answer.question_id==questions[2].id).all()
+        answers = self.session.query(Answer).filter(
+                                    Answer.question_id==questions[2].id).all()
         self.assertEqual(0, len(answers))
 
 class ViewAddQuestions(unittest.TestCase):
@@ -310,7 +228,8 @@ class ViewAddQuestions(unittest.TestCase):
         request = testing.DummyRequest(_createFormData(addQuestionsData))
         request.GET['id'] = 1
         info = view_add_questions(request)
-        questions = self.session.query(Question).filter(Question.test_id==1).all()
+        questions = self.session.query(Question).filter(
+                                    Question.test_id==1).all()
         self.assertEquals(6, len(questions))
         self.assertEqual("multipleChoice", questions[3].question_type)
         self.assertEqual("selectTrue", questions[4].question_type)
@@ -321,14 +240,16 @@ class ViewAddQuestions(unittest.TestCase):
         self.assertEqual(4, questions[3].id)
         self.assertEqual(5, questions[4].id)
         self.assertEqual(6, questions[5].id)
-        answers = self.session.query(Answer).filter(Answer.question_id==questions[3].id).all()
+        answers = self.session.query(Answer).filter(
+                                    Answer.question_id==questions[3].id).all()
         self.assertEqual(13, answers[0].id)
         self.assertEqual(14, answers[1].id)
         self.assertEqual("3", answers[0].answer)
         self.assertEqual("4", answers[1].answer)
         self.assertFalse(answers[0].correct)
         self.assertTrue(answers[1].correct)
-        answers = self.session.query(Answer).filter(Answer.question_id==questions[4].id).all()
+        answers = self.session.query(Answer).filter(
+                                    Answer.question_id==questions[4].id).all()
         self.assertEqual(15, answers[0].id)
         self.assertEqual(16, answers[1].id)
         self.assertEqual(17, answers[2].id)
@@ -338,7 +259,8 @@ class ViewAddQuestions(unittest.TestCase):
         self.assertTrue(answers[0].correct)
         self.assertTrue(answers[1].correct)
         self.assertFalse(answers[2].correct)
-        answers = self.session.query(Answer).filter(Answer.question_id==questions[5].id).all()
+        answers = self.session.query(Answer).filter(
+                                    Answer.question_id==questions[5].id).all()
         self.assertEqual(0, len(answers))
         
 
@@ -364,19 +286,23 @@ class ViewEditQuestion(unittest.TestCase):
         self.assertEqual(["test", "question", "form"], info.keys())
         self.assertEqual(1, info['test'].id)
         self.assertEqual(1, info['question'].id)
-        question = self.session.query(Question).filter(Question.id == 1).first()
+        question = self.session.query(Question).filter(
+                                    Question.id == 1).first()
         self.assertEqual("1+1 = ?", question.question)
         self.assertEqual("multipleChoice", question.question_type)
-        answers = self.session.query(Answer).filter(Answer.question_id == info['question'].id).all()
+        answers = self.session.query(Answer).filter(
+                            Answer.question_id == info['question'].id).all()
         self.assertEqual(6, len(answers))
         request = testing.DummyRequest(_createFormData(editMultipleChoiceData))
         request.GET['id'] = 1
         info = view_edit_question(request)
         self.assertEqual('/edit_test?id=1', info.location)
-        question = self.session.query(Question).filter(Question.id == 1).first()
+        question = self.session.query(Question).filter(
+                                    Question.id == 1).first()
         self.assertEqual("X^2 = 4", question.question)
         self.assertEqual("selectTrue", question.question_type)
-        answers = self.session.query(Answer).filter(Answer.question_id == 1).all()
+        answers = self.session.query(Answer).filter(
+                                    Answer.question_id == 1).all()
         self.assertEqual(4, len(answers))
         self.assertEqual('X = -2',answers[0].answer)
         self.assertEqual('X = 2',answers[1].answer)
@@ -394,20 +320,24 @@ class ViewEditQuestion(unittest.TestCase):
         self.assertEqual(["test", "question", "form"], info.keys())
         self.assertEqual(1, info['test'].id)
         self.assertEqual(2, info['question'].id)
-        question = self.session.query(Question).filter(Question.id == 2).first()
+        question = self.session.query(Question).filter(
+                                    Question.id == 2).first()
         self.assertEqual("X^2 = 1", question.question)
         self.assertEqual("selectTrue", question.question_type)
-        answers = self.session.query(Answer).filter(Answer.question_id == info['question'].id).all()
+        answers = self.session.query(Answer).filter(
+                            Answer.question_id == info['question'].id).all()
         self.assertEqual(6, len(answers))
         request = testing.DummyRequest(_createFormData(editSelectTrueData))
         request.GET['id'] = 1
         request.GET['question'] = 2
         info = view_edit_question(request)
         self.assertEqual('/edit_test?id=1', info.location)
-        question = self.session.query(Question).filter(Question.id == 2).first()
+        question = self.session.query(Question).filter(
+                                    Question.id == 2).first()
         self.assertEqual("1+1=?", question.question)
         self.assertEqual("multipleChoice", question.question_type)
-        answers = self.session.query(Answer).filter(Answer.question_id == 2).all()
+        answers = self.session.query(Answer).filter(
+                                    Answer.question_id == 2).all()
         self.assertEqual(4, len(answers))
         self.assertEqual('1',answers[0].answer)
         self.assertEqual('2',answers[1].answer)
@@ -425,14 +355,16 @@ class ViewEditQuestion(unittest.TestCase):
         self.assertEqual(["test", "question", "form"], info.keys())
         self.assertEqual(1, info['test'].id)
         self.assertEqual(3, info['question'].id)
-        question = self.session.query(Question).filter(Question.id == 3).first()
+        question = self.session.query(Question).filter(
+                                    Question.id == 3).first()
         self.assertEqual("What is you're name?", question.question)
         request = testing.DummyRequest(_createFormData(editShortAnswerData))
         request.GET['id'] = 1
         request.GET['question'] = 3
         info = view_edit_question(request)
         self.assertEqual('/edit_test?id=1', info.location)
-        question = self.session.query(Question).filter(Question.id == 3).first()
+        question = self.session.query(Question).filter(
+                                    Question.id == 3).first()
         self.assertEqual("Who are you?", question.question)
 
         ###test removeing a question###
@@ -485,8 +417,10 @@ class ViewDeleteTest(unittest.TestCase):
         request.GET['yes'] = 1
         info = view_delete_test(request)
         tests = self.session.query(Test).filter(Test.id==1).all()
-        questions = self.session.query(Question).filter(Question.test_id==1).all()
-        answers = self.session.query(Answer).filter(Answer.question_id<=3).all()
+        questions = self.session.query(Question).filter(
+                                        Question.test_id==1).all()
+        answers = self.session.query(Answer).filter(
+                                        Answer.question_id<=3).all()
         self.assertEqual(0, len(tests))
         self.assertEqual(0, len(questions))
         self.assertEqual(0, len(answers))
@@ -514,11 +448,14 @@ class ViewEditTest(unittest.TestCase):
         test = self.session.query(Test).filter(Test.id == 1).first()
         self.assertEqual(test, info['test'])
         self.assertEqual('question 1', info['questions'][0][0])
-        self.assertEqual("/edit_question?id=1;question=1", info['questions'][0][1])
+        self.assertEqual("/edit_question?id=1;question=1",
+                        info['questions'][0][1])
         self.assertEqual('question 2', info['questions'][1][0])
-        self.assertEqual("/edit_question?id=1;question=2", info['questions'][1][1])
+        self.assertEqual("/edit_question?id=1;question=2",
+                        info['questions'][1][1])
         self.assertEqual('question 3', info['questions'][2][0])
-        self.assertEqual("/edit_question?id=1;question=3", info['questions'][2][1])        
+        self.assertEqual("/edit_question?id=1;question=3",
+                        info['questions'][2][1])        
         self.assertEqual("/delete_test?id=1",info['delete_link'])
         self.assertEqual("/add_questions?id=1",info['add_link'])
 
@@ -645,7 +582,8 @@ class ViewQuestion(unittest.TestCase):
         request.GET['question'] = 3
         info = view_question(request)
         self.assertEqual('/test?id=1', info.location)
-        self.assertEqual("James Boisture", request.session['current_test']['3'])
+        self.assertEqual("James Boisture",
+                        request.session['current_test']['3'])
 
 class ViewTest(unittest.TestCase):
 

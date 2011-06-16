@@ -42,16 +42,18 @@ def view_add_questions(request):
     test_id = int(request.GET["id"])
     dbsession = DBSession()
     test = dbsession.query(Test).filter(Test.id==test_id).first()
-    answers = dbsession.query(Question).filter(Question.test_id == test.id).all()
+    answers = dbsession.query(Question).filter(
+                                Question.test_id == test.id).all()
     question_num = len(answers)
     post = request.POST
     if 'add questions' in post:
         controls = request.POST.items() # get the data from the form
         parse_add_form_data(controls, dbsession, question_num, test)
-        return HTTPFound(location='/edit_test?id='+str(test_id)) #redirect to homepage
+        return HTTPFound(location='/edit_test?id='+str(test_id)) 
+                                                    #redirect to homepage
     schema = AddQuestionsSchema()
     myform = Form(schema, buttons=('add questions',), 
-                  use_ajax=True)
+                    use_ajax=True)
     return {'form':myform.render()}
     
 
@@ -149,7 +151,8 @@ def view_edit_test(request):
         questions.append(("question "+str(i+1),
                  "/edit_question?id="+str(test_id)+";question="+str(i+1)))
     
-    return {"test":test,"questions":questions,'delete_link':delete_link,'add_link':add_link}
+    return {"test":test,"questions":questions,
+            'delete_link':delete_link,'add_link':add_link}
 
 def view_choose_test(request):
     """
@@ -158,8 +161,9 @@ def view_choose_test(request):
     dbsession = DBSession()
     tests = dbsession.query(Test).all()
     for test in tests: 
-        test.url = "edit_test?id="+str(test.id) #create url for each test to pass to 
-                                           #the template
+        test.url = "edit_test?id="+str(test.id) 
+                                        #create url for each test to pass to 
+                                        #the template
     return {'tests':tests, 'project':'pyquiz'}
 
 
@@ -172,7 +176,7 @@ def view_index(request):
     dbsession = DBSession()
     tests = dbsession.query(Test).all() #load all tests
     for test in tests: 
-        test.url = "test?id="+str(test.id) #create url for each test to pass to 
+        test.url = "test?id="+str(test.id) #create url for each test to pass to
                                            #the template
     return {'tests':tests, 'project':'pyquiz'}
 
@@ -232,7 +236,8 @@ def view_question(request):
             for control in controls:
                 if control[0] == 'checkbox':
                     answer.append(control[1])
-        session["current_test"][str(question_num)]=answer #store selected answer
+        session["current_test"][str(question_num)]=answer 
+                                            #store selected answer
         if 'next question' in post:
             return HTTPFound(location='/question?id='+str(test.id)+
                              ';question='+str(question_num+1))
@@ -329,7 +334,8 @@ def view_grade_test(request):
         q_num = question.question_num
         if str(q_num) in current_test.keys(): #make sure user selected
                                             #an answer to the question
-            user_answer=current_test[str(q_num)]#get users answer for the question
+            user_answer=current_test[str(q_num)]
+                                            #get users answer for the question
             grade = grade_question(question, dbsession, user_answer)
             if question.graded:
                 if grade[0]:

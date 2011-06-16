@@ -50,7 +50,8 @@ class Question(Base):
                              #be automatically graded upon submission
     question_type = Column(String) #stores what type of question this is
     question = Column(String) #stores the text of the question
-    answers = relationship("Answer", backref = "questions", cascade="all, delete, delete-orphan") #establishes a 
+    answers = relationship("Answer", backref = "questions", 
+                        cascade="all, delete, delete-orphan") #establishes a 
                           #relationship between the quesiton and it's answers
     question_num = Column(Integer) #stores the questions number on the test.
 
