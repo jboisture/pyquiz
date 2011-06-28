@@ -9,6 +9,8 @@ from pyramid.httpexceptions import HTTPFound
 from schema import TestSchema, EditQuestionSchema
 from schema import EditShortAnswerQuestionSchema, AddQuestionsSchema
 
+from pyramid.security import authenticated_userid
+
 from colander import MappingSchema
 from colander import SchemaNode
 from colander import String
@@ -23,10 +25,15 @@ from deform import widget
 from questions import *
 
 
+
 def view_create_test(request):
     """
     This is the view for the form page where tests are created.
     """
+    if authenticated_userid(request) != 'teacher':
+        return HTTPFound(location='/')
+
+    course_id = int(request.GET["id"])
 
     schema = TestSchema()
     myform = Form(schema, buttons=('submit',), 
@@ -34,11 +41,13 @@ def view_create_test(request):
     if 'submit' in request.POST: # check if the submit button was clicked
         controls = request.POST.items() # get the data from the form
         dbsession = DBSession()
-        parse_form_data(controls, dbsession)
-        return HTTPFound(location='/') #redirect to homepage
+        parse_form_data(controls, course_id, dbsession)
+        return HTTPFound(location='/course?id='+course_id) #redirect to homepage
     return {'form':myform.render()}
 
 def view_add_questions(request):
+    if authenticated_userid(request) != 'teacher':
+        return HTTPFound(location='/')
     test_id = int(request.GET["id"])
     dbsession = DBSession()
     test = dbsession.query(Test).filter(Test.id==test_id).first()
@@ -59,6 +68,8 @@ def view_add_questions(request):
 
 def view_edit_question(request):
     ###load the question number and test id###
+    if authenticated_userid(request) != 'teacher':
+        return HTTPFound(location='/')
     test_id = int(request.GET["id"])
     quesiton_num = 1
     try:
@@ -99,6 +110,8 @@ def view_edit_question(request):
     return {"test":test,'form':form.render(appstruct), 'question': question}
 
 def view_delete_test(request):
+    if authenticated_userid(request) != 'teacher':
+        return HTTPFound(location='/')
     test_id = int(request.GET["id"])
     dbsession = DBSession()
     test = dbsession.query(Test).filter(Test.id == test_id).first()
@@ -131,8 +144,9 @@ def view_delete_test(request):
     
 
 def view_edit_test(request):
+    if authenticated_userid(request) != 'teacher':
+        return HTTPFound(location='/')
     test_id = int(request.GET["id"]) #get test id
-
 
     ###load test and questions from database###
     dbsession = DBSession()
@@ -158,27 +172,89 @@ def view_choose_test(request):
     """
     View that controls page used to select a test to edit
     """
+    if authenticated_userid(request) != 'teacher':
+        return HTTPFound(location='/')
+    if 'current_test' in request.session.keys(): 
+        request.session.pop('current_test')
+    course_id = int(request.GET["id"])
     dbsession = DBSession()
-    tests = dbsession.query(Test).all()
+    tests = dbsession.query(Test).filter(Test.course == course_id).all()
     for test in tests: 
         test.url = "edit_test?id="+str(test.id) 
                                         #create url for each test to pass to 
                                         #the template
-    return {'tests':tests, 'project':'pyquiz'}
+    course = dbsession.query(Course).filter(Course.id == course_id).first()
+    messages = []
+    messages.append("Course: "+course.course_name)
+    instructors = course.instructor.split('%&')
+    m = "Instructor(s): " + instructors[0]
+    i = 1
+    while i < len(instructors):
+        m += ', ' + instructors[i]
+        i += 1
+    messages.append(m)
+    messages.append('There are currently '+str(len(tests))+' tests:')
+    return {'tests':tests, 'messages':messages}
 
 
 def view_index(request):
     """
     View associated with the home page of the app.
     """
+    if authenticated_userid(request) == None:
+        return HTTPFound(location='/')
     if 'current_test' in request.session.keys(): 
         request.session.pop('current_test') #remove current_test from session
+    userinfo = request.session['user']
+    messages = []
+    messages.append("Welcome " + userinfo['name'] + " to pyquiz.")
     dbsession = DBSession()
-    tests = dbsession.query(Test).all() #load all tests
+    if authenticated_userid(request) == 'teacher':
+        messages.append('You are currently teaching the following classes:')
+    if authenticated_userid(request) == 'student':
+        messages.append('You are currently enrolled in the following classes:')
+    courses = []
+    for c in userinfo['courses']:
+        courses.append(dbsession.query(Course).filter(
+                                       Course.course_id == c[0]).first())
+    messages.append('')
+    if len(courses) == 0:
+        messages[2] == 'You have no classes'
+    for course in courses:
+        course.url = 'course?id='+str(course.id)
+    return {'messages': messages, 'courses': courses}
+        
+
+
+def view_course(request):
+    if authenticated_userid(request) == None:
+        return HTTPFound(location='/')
+    if 'current_test' in request.session.keys(): 
+        request.session.pop('current_test')
+    course_id = int(request.GET["id"])
+    dbsession = DBSession()
+    course = dbsession.query(Course).filter(Course.id == course_id).first()
+    tests = dbsession.query(Test).filter(Test.course == course_id).all() #load all tests
     for test in tests: 
         test.url = "test?id="+str(test.id) #create url for each test to pass to
                                            #the template
-    return {'tests':tests, 'project':'pyquiz'}
+    messages = []
+    messages.append("Course: "+course.course_name)
+    instructors = course.instructor.split('%&')
+    m = "Instructor(s): " + instructors[0]
+    i = 1
+    while i < len(instructors):
+        m += ', ' + instructors[i]
+        i += 1
+    messages.append(m)
+    messages.append('There are '+str(len(tests))+' tests to take:')
+    links = []
+    if authenticated_userid(request) == 'teacher':
+        links.append(('/create_test?id='+str(course.id),
+                                   'Create A New Test'))
+        links.append(('/choose_test?id='+str(course.id),
+                               'Edit An Existing Test'))
+    return {'tests':tests, 'messages':messages, 'links':links}
 
 
 
@@ -187,7 +263,8 @@ def view_question(request):
     """
     The view for the question page to answer a single question of a test.
     """
-
+    if authenticated_userid(request) == None:
+        return HTTPFound(location='/')
     ###load the question number and test id###
     test_id = int(request.GET["id"])
     quesiton_num = 1
@@ -274,6 +351,8 @@ def view_test(request):
     This view displays the submit page that shows and overview of the test
     and allows the test taker to submit the test for grading.
     """
+    if authenticated_userid(request) == None:
+        return HTTPFound(location='/')
     test_id = int(request.GET["id"]) #get test id
 
     ###load test and questions from database###
@@ -309,6 +388,8 @@ def view_grade_test(request):
     """
     This view grades tests and reports the grade in the grade page.
     """
+    if authenticated_userid(request) == None:
+        return HTTPFound(location='/')
 
     ###load the test and it's questions froms the database###
     test_id = int(request.GET["id"])

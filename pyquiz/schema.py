@@ -95,7 +95,6 @@ class TestSchema(Schema):
     Schema that stores the test being created.
     """
     name = SchemaNode(String())
-    class_id = SchemaNode(String())
     questions = Questions()
     short_answer_questions = ShortAnswerQuestions()
 

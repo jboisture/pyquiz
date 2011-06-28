@@ -20,6 +20,10 @@ from sqlalchemy.orm import sessionmaker
 
 from zope.sqlalchemy import ZopeTransactionExtension
 
+from pyramid.security import Allow
+from pyramid.security import Everyone
+
+
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
@@ -28,7 +32,8 @@ class Test(Base):
     __tablename__ = "tests"
     id=Column(Integer, primary_key=True) #id to be used as a primary key
     name = Column(String) #name variable that must be a String
-    course = Column(String) #course variable that must be a String
+    course = Column(String, ForeignKey("courses.id"))
+                                   #course variable that must be a String
     questions = relationship("Question", backref = 'tests') #establishes a 
                             #relationship between the test and it's questions  
     
@@ -80,8 +85,17 @@ class Answer(Base):
         self.answer = answer
         self.correct = correct
 
+class Course(Base):
+    __tablename__ = 'courses'
+    id = Column(Integer, primary_key=True)
+    course_id = Column(String)
+    course_name = Column(String)
+    instructor = Column(String)
 
-
+    def __init__(self, course_id, course_name, instructor):
+        self.course_id = course_id
+        self.course_name = course_name
+        self.instructor = instructor
 
     
 def initialize_sql(engine):
@@ -90,3 +104,9 @@ def initialize_sql(engine):
     Base.metadata.bind = engine
     Base.metadata.create_all(engine)
     return DBSession
+
+
+class RootFactory(object):
+    __acl__ = [ (Allow, Everyone, 'view'),
+                (Allow, 'group:editors', 'edit') ]
+    def __init__(self, request): pass

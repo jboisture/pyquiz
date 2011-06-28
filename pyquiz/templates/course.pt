@@ -15,10 +15,12 @@
       <div class="middle align-center">
         <p class="app-welcome">${messages[0]}</p>
         <p>${messages[1]}</p>
-
+        <ul tal:repeat="link links">
+            <li><a href="${link[0]}">${link[1]}</a></li>
+        </ul>
         <p>${messages[2]}</p>
-        <ul tal:repeat="course courses">
-            <li><a href="${course.url}">${course.course_name}</a></li>
+        <ul tal:repeat="test tests">
+            <li><a href="${test.url}">${test.name}</a></li>
         </ul>
       </div>
     </div>

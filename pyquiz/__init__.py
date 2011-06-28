@@ -9,6 +9,10 @@ from pyramid.session import UnencryptedCookieSessionFactoryConfig
 from pyramid.i18n import get_localizer
 from pyramid.threadlocal import get_current_request
 
+from pyramid.authentication import AuthTktAuthenticationPolicy
+from pyramid.authorization import ACLAuthorizationPolicy
+from pyquiz.security import groupfinder
+
 import deform
 
 
@@ -28,11 +32,19 @@ def main(global_config, **settings):
     deform_template_dir = resource_filename('deform', 'templates/')
     deform.Form.set_zpt_renderer(deform_template_dir, translator=translator)
     my_session_factory = UnencryptedCookieSessionFactoryConfig('itsaseekreet')
-    config = Configurator(settings=settings, 
+    authn_policy = AuthTktAuthenticationPolicy(
+        'sosecret', callback=groupfinder)
+    authz_policy = ACLAuthorizationPolicy()
+    config = Configurator(settings=settings,
+                          root_factory='pyquiz.models.RootFactory',
+                          authentication_policy=authn_policy,
+                          authorization_policy=authz_policy,
                           session_factory = my_session_factory)
     config.add_static_view('static', 'pyquiz:static')
     config.add_static_view('static_deform', 'deform:static')
-    config.add_route('index', '/', view='pyquiz.views.view_index',
+    config.add_route('login', '/', view='pyquiz.login.login',
+                     view_renderer='pyquiz:templates/login.pt')
+    config.add_route('index', '/index', view='pyquiz.views.view_index',
                      view_renderer='templates/index.pt')
     config.add_route('create test', '/create_test',   
                      view='pyquiz.views.view_create_test',
@@ -42,6 +54,8 @@ def main(global_config, **settings):
                      view_renderer='templates/question.pt')
     config.add_route('test', '/test', view='pyquiz.views.view_test',
                      view_renderer='templates/test.pt')
+    config.add_route('course', '/course', view='pyquiz.views.view_course',
+                     view_renderer='templates/course.pt')
     config.add_route('grade', '/grade', view='pyquiz.views.view_grade_test',
                      view_renderer='templates/grade_test.pt')
     config.add_route('choose test', '/choose_test', 
@@ -62,5 +76,10 @@ def main(global_config, **settings):
     config.add_translation_dirs('pyquiz:locale', 
                                 'colander:locale',
                                 'deform:locale')
+    config.add_view('pyquiz.login.login',
+                    context='pyramid.httpexceptions.HTTPForbidden',
+                    renderer='pyquiz:templates/login.pt')
+    config.add_route('logout', '/logout')
+    config.add_view('pyquiz.login.logout', route_name='logout')
     config.scan('pyquiz')
     return config.make_wsgi_app()

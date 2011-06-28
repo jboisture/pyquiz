@@ -13,8 +13,10 @@
 
     <div id="middle">
       <div class="middle align-center">
+        <p class="app-welcome">${messages[0]}</p>
+        <p>${messages[1]}</p>
 
-        <h3>Problems</h3>
+        <p>${messages[2]}</p>
         <ul tal:repeat="test tests">
             <li><a href="${test.url}">${test.name}</a></li>
         </ul>

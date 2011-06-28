@@ -3,7 +3,7 @@ This file contains the logic responsible for parsing the form data
 and creating the test, questions and answers.
 """
 from pyquiz.models import DBSession
-from pyquiz.models import Test, Question, Answer
+from pyquiz.models import Test, Question, Answer, Course
 import colander
 import deform
 
@@ -272,7 +272,7 @@ def parse_add_form_data(controls, dbsession, question_num, test):
 
 
 
-def parse_form_data(controls, dbsession):
+def parse_form_data(controls, course_id, dbsession):
     """
     This function parses the controls from the test creation form
     and puts the newly created test, questions, and answers into
@@ -284,10 +284,9 @@ def parse_form_data(controls, dbsession):
     short_answer = False
     while c < len(controls):#loop used to traverse the controls creating tests,
                    #questions,and answers
-        if controls[c][0] == "name" and controls[c+1][0] == "class_id":
+        if controls[c][0] == "name":
             testname = str(controls[c][1])
-            class_id = str(controls[c+1][1])
-            newTest = Test(testname, class_id)
+            newTest = Test(testname, course_id)
             dbsession.add(newTest)
             dbsession.flush()
             foundTest = True
