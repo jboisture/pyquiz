@@ -30,7 +30,7 @@ def view_create_test(request):
     """
     This is the view for the form page where tests are created.
     """
-    if authenticated_userid(request) != 'teacher':
+    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
 
     course_id = int(request.GET["id"])
@@ -46,7 +46,7 @@ def view_create_test(request):
     return {'form':myform.render()}
 
 def view_add_questions(request):
-    if authenticated_userid(request) != 'teacher':
+    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
     test_id = int(request.GET["id"])
     dbsession = DBSession()
@@ -68,7 +68,7 @@ def view_add_questions(request):
 
 def view_edit_question(request):
     ###load the question number and test id###
-    if authenticated_userid(request) != 'teacher':
+    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
     test_id = int(request.GET["id"])
     quesiton_num = 1
@@ -110,7 +110,7 @@ def view_edit_question(request):
     return {"test":test,'form':form.render(appstruct), 'question': question}
 
 def view_delete_test(request):
-    if authenticated_userid(request) != 'teacher':
+    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
     test_id = int(request.GET["id"])
     dbsession = DBSession()
@@ -144,7 +144,7 @@ def view_delete_test(request):
     
 
 def view_edit_test(request):
-    if authenticated_userid(request) != 'teacher':
+    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
     test_id = int(request.GET["id"]) #get test id
 
@@ -172,7 +172,7 @@ def view_choose_test(request):
     """
     View that controls page used to select a test to edit
     """
-    if authenticated_userid(request) != 'teacher':
+    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
     if 'current_test' in request.session.keys(): 
         request.session.pop('current_test')
@@ -201,7 +201,7 @@ def view_index(request):
     """
     View associated with the home page of the app.
     """
-    if authenticated_userid(request) == None:
+    if authenticated_userid(request) == None or 'user' not in request.session.keys():
         return HTTPFound(location='/')
     if 'current_test' in request.session.keys(): 
         request.session.pop('current_test') #remove current_test from session
@@ -215,8 +215,10 @@ def view_index(request):
         messages.append('You are currently enrolled in the following classes:')
     courses = []
     for c in userinfo['courses']:
-        courses.append(dbsession.query(Course).filter(
-                                       Course.course_id == c[0]).first())
+        course = dbsession.query(Course).filter(
+                                       Course.course_id == c[0]).first()
+        if course != None:
+             courses.append(course)
     messages.append('')
     if len(courses) == 0:
         messages[2] == 'You have no classes'
@@ -227,7 +229,7 @@ def view_index(request):
 
 
 def view_course(request):
-    if authenticated_userid(request) == None:
+    if authenticated_userid(request) == None or 'user' not in request.session.keys():
         return HTTPFound(location='/')
     if 'current_test' in request.session.keys(): 
         request.session.pop('current_test')
@@ -263,7 +265,7 @@ def view_question(request):
     """
     The view for the question page to answer a single question of a test.
     """
-    if authenticated_userid(request) == None:
+    if authenticated_userid(request) == None or 'user' not in request.session.keys():
         return HTTPFound(location='/')
     ###load the question number and test id###
     test_id = int(request.GET["id"])
@@ -351,7 +353,7 @@ def view_test(request):
     This view displays the submit page that shows and overview of the test
     and allows the test taker to submit the test for grading.
     """
-    if authenticated_userid(request) == None:
+    if authenticated_userid(request) == None or 'user' not in request.session.keys():
         return HTTPFound(location='/')
     test_id = int(request.GET["id"]) #get test id
 
@@ -388,7 +390,7 @@ def view_grade_test(request):
     """
     This view grades tests and reports the grade in the grade page.
     """
-    if authenticated_userid(request) == None:
+    if authenticated_userid(request) == None or 'user' not in request.session.keys():
         return HTTPFound(location='/')
 
     ###load the test and it's questions froms the database###

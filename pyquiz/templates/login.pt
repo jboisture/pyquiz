@@ -8,6 +8,7 @@
   <meta name="keywords" content="python web application" />
   <meta name="description" content="pyramid web application" />
   <link rel="shortcut icon" href="${request.static_url('pyquiz:static/favicon.ico')}" />
+  <h1>Welcome to Pyquiz.  Please login to take quizes.</h1>
 </head>
 <body>
   <div id="wrap">

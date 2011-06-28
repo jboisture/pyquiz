@@ -51,7 +51,7 @@ def schooltool_login(username, password):
 
 
 def login(request):
-    if unauthenticated_userid(request) != None:
+    if unauthenticated_userid(request) != None and 'user' in request.session.keys():
         return HTTPFound(location='/index')
     message = ''
     login = ''
