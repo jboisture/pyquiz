@@ -49,6 +49,14 @@ def main(global_config, **settings):
     config.add_route('create test', '/create_test',   
                      view='pyquiz.views.view_create_test',
                      view_renderer='templates/create_test.pt')
+    config.add_route('grade submitted test', '/grade_submitted_test',   
+                     view='pyquiz.views.view_grade_submitted_test',
+                     view_renderer='templates/grade_submitted_test.pt')
+    config.add_route('grade question', '/grade_question',   
+                     view='pyquiz.views.view_grade_question',
+                     view_renderer='templates/grade_question.pt')
+    config.add_route('ungraded tests', '/ungraded_tests', view='pyquiz.views.view_ungraded_tests',
+                     view_renderer = 'templates/ungraded_tests.pt')
     config.add_route('question', '/question',            
                      view='pyquiz.views.view_question',
                      view_renderer='templates/question.pt')

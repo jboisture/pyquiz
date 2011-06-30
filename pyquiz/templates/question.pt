@@ -2,7 +2,9 @@
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <a align="right" href="/logout">logout</a>
+  <p align='right'>
+  <a href="/">return home</a> <a href="/logout">logout</a>
+  </p>
 <title>
    Pyquiz
 </title>

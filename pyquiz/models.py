@@ -11,6 +11,8 @@ from sqlalchemy import Table
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import *
 
+import datetime
+
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
@@ -26,6 +28,53 @@ from pyramid.security import Everyone
 
 DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
+
+class TakenTest(Base):
+    __tablename__ = "takentests"
+    id = Column(Integer, primary_key=True)
+    test_id = Column(Integer, ForeignKey("tests.id")) #id of test each
+    username = Column(String)
+    student_name = Column(String)
+    number_graded_questions = Column(Integer)
+    correct_graded_questions = Column(Integer)
+    ungraded_answers = relationship("TakenAnswer", backref = "questions", 
+                           cascade="all, delete, delete-orphan")
+    time_submitted = Column(String)
+    has_ungraded = Column(Boolean)
+    
+    def __init__(self, test_id, username, student_name, number_graded_questions, correct_graded_questions, has_ungraded):
+        time = datetime.datetime.now()
+        if time.minute < 10:
+            time_submitted = str(time.month) + "/" + str(time.day) + '/' + str(time.year) + " at " + str(time.hour%12) + ":0" + str(time.minute)
+        else:
+            time_submitted = str(time.month) + "/" + str(time.day) + '/' + str(time.year) + " at " + str(time.hour%12) + ":" + str(time.minute)
+        if time.hour%12 == 1: time_submitted += "PM"
+        else:time_submitted += "AM"
+        self.time_submitted = time_submitted
+        self.test_id = test_id
+        self.username = username
+        self.student_name = student_name
+        self.number_graded_questions = number_graded_questions
+        self.correct_graded_questions = correct_graded_questions
+        self.has_ungraded = has_ungraded
+
+class TakenAnswer(Base):
+    __tablename__ = "takenanswers"
+    id = Column(Integer, primary_key=True)
+    takentest_id = Column(Integer, ForeignKey("takentests.id"))
+    question_id = Column(Integer, ForeignKey("questions.id"))
+    question_num = Column(Integer)
+    user_answer = Column(String)
+    graded = Column(Boolean)
+    correct = Column(Boolean)
+
+    def __init__(self, takentest_id, question, user_answer, graded, correct):
+        self.takentest_id = takentest_id
+        self.question_id = question.id
+        self.question_num = question.question_num
+        self.user_answer = user_answer
+        self.graded = graded
+        self.correct = correct
 
 class Test(Base):
     """the Test class creates the test table used to store each test"""

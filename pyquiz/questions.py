@@ -3,7 +3,7 @@ This file contains the logic responsible for parsing the form data
 and creating the test, questions and answers.
 """
 from pyquiz.models import DBSession
-from pyquiz.models import Test, Question, Answer, Course
+from pyquiz.models import Test, Question, Answer, Course, TakenTest, TakenAnswer
 import colander
 import deform
 
@@ -39,7 +39,7 @@ def grade_question(question, dbsession, user_answer):
         answer = Answer(question.id, "username*:"+user_answer, None)
         dbsession.add(answer)
         dbsession.flush
-        return (True, 1)
+        return (False, 0)
     return (False, 0)        
 
 def create_short_answer_form(question, dbsession, user_choice):

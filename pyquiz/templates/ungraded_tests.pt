@@ -9,21 +9,20 @@
   <meta name="keywords" content="python web application" />
   <meta name="description" content="pyramid web application" />
   <link rel="shortcut icon" href="${request.static_url('pyquiz:static/favicon.ico')}" />
-  <h1>${test.name}</h1>
+  <h1>Pyquiz</h1>
 </head>
 <body>
   <div id="wrap">
-
     <div id="middle">
       <div class="middle align-center">
-
-        <h3>Problems</h3>
-        <ul tal:repeat="question questions">
-            <li><a href="${question[1]}">${question[0]}</a></li>
+        <p>The following submitted tests have ungraded questsions.  
+           They will be submitted to schoolTool once they have been graded
+        </p>
+        <br/>
+        <p>${message}</p>
+        <ul tal:repeat="test taken_tests">
+            <li><a href="${test.url}">${test.link}</a></li>
         </ul>
-        <a href="${add_link}">add questions</a><br/>
-        <a href="${delete_link}">delete test</a><br/>
-        <a href="/">return home</a>
       </div>
     </div>
   </div>

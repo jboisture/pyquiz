@@ -42,7 +42,7 @@ def view_create_test(request):
         controls = request.POST.items() # get the data from the form
         dbsession = DBSession()
         parse_form_data(controls, course_id, dbsession)
-        return HTTPFound(location='/course?id='+course_id) #redirect to homepage
+        return HTTPFound(location='/course?id='+str(course_id)) #redirect to homepage
     return {'form':myform.render()}
 
 def view_add_questions(request):
@@ -225,8 +225,98 @@ def view_index(request):
     for course in courses:
         course.url = 'course?id='+str(course.id)
     return {'messages': messages, 'courses': courses}
-        
 
+
+def view_ungraded_tests(request):
+    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
+        return HTTPFound(location='/')  
+    if "current_test" in request.session.keys():
+        request.session.pop('current_test')
+    test_id = int(request.GET["id"])
+    dbsession = DBSession()
+    test = dbsession.query(Test).filter(Test.id==test_id).first()
+    taken_tests = dbsession.query(TakenTest).filter(TakenTest.test_id == test_id).all()
+    ungraded_tests = []
+    for taken_test in taken_tests:
+        if taken_test.has_ungraded:
+            ungraded_tests.append(taken_test)
+            taken_test.url = "grade_submitted_test?id="+str(taken_test.id)
+            taken_test.link = "grade test by " + taken_test.student_name
+    message = ''
+    if len(ungraded_tests) == 0: message = 'There are no tests to grade'
+    return {'test': test, 'taken_tests': ungraded_tests, 'message':message}
+
+def view_grade_question(request):
+    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
+        return HTTPFound(location='/')  
+    if "current_test" in request.session.keys():
+        request.session.pop('current_test')
+    question_id = int(request.GET["id"])
+    dbsession = DBSession()
+    answer = dbsession.query(TakenAnswer).filter(TakenAnswer.id==question_id).first()
+    question = dbsession.query(Question).filter(Question.id==answer.question_id).first()
+    taken_test = dbsession.query(TakenTest).filter(TakenTest.id==answer.takentest_id).first()
+    test = dbsession.query(Test).filter(Test.id == taken_test.test_id).first()
+    num_questions = len(dbsession.query(Question).filter(Question.test_id == test.id).all())
+    post = request.POST
+    if 'correct' in post or 'incorrect' in post:
+        if not answer.graded:
+            answer.graded = True
+            taken_test.number_graded_questions += 1
+            dbsession.flush()
+        if 'correct' in post and not answer.correct:
+            answer.correct = True
+            taken_test.correct_graded_questions += 1
+            dbsession.flush()
+        if 'incorrect' in post and answer.correct:
+            answer.correct = False
+            taken_test.correct_graded_questions -= 1
+            dbsession.flush()
+        if taken_test.number_graded_questions == num_questions:
+            grade = (taken_test.correct_graded_questions, num_questions)
+            #submit grade to school tool
+            taken_test.has_ungraded = False
+            dbsession.flush()
+            return HTTPFound(location='/ungraded_tests?id='+str(test.id))
+        return HTTPFound(location='/grade_sumbitted_test?id='+str(taken_test.id))
+
+
+    messages = []
+    messages.append("Question Number "+str(question.question_num))
+    messages.append("Question: "+question.question)
+    messages.append(taken_test.student_name+ "'s answer: " + answer.user_answer)
+    class gradeForm(colander.Schema):
+        pass
+    schema = gradeForm()
+    form = deform.Form(schema, buttons=('correct','incorrect'))
+    return {"message": messages, "form": form.render()}
+    
+
+
+def view_grade_submitted_test(request):
+    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
+        return HTTPFound(location='/')  
+    if "current_test" in request.session.keys():
+        request.session.pop('current_test')
+    test_id = int(request.GET["id"])
+    dbsession = DBSession()
+    taken_test = dbsession.query(TakenTest).filter(TakenTest.id==test_id).first()
+    test = dbsession.query(Test).filter(Test.id==taken_test.test_id).first()
+    messages = []
+    messages.append("Test Name: " + test.name)
+    messages.append("Taken by " + taken_test.student_name + " on " + taken_test.time_submitted)
+    answers = dbsession.query(TakenAnswer).filter(TakenAnswer.takentest_id == taken_test.id).all()
+    for answer in answers:
+        if answer.graded:
+            answer.html = u'<p>'+str(answer.question_num)+u'. Graded: '
+            if answer.correct:
+                answer.html += u'Correct</p>'
+            else: answer.html += u'Incorrect</p>'
+        else:
+            answer.html = u'<a href="grade_question?id='+str(answer.id)+u'">'+str(answer.question_num)
+            answer.html += u'. Not Graded</a>'
+    return {'messages':messages, 'answers':answers}
+            
 
 def view_course(request):
     if authenticated_userid(request) == None or 'user' not in request.session.keys():
@@ -237,9 +327,18 @@ def view_course(request):
     dbsession = DBSession()
     course = dbsession.query(Course).filter(Course.id == course_id).first()
     tests = dbsession.query(Test).filter(Test.course == course_id).all() #load all tests
-    for test in tests: 
-        test.url = "test?id="+str(test.id) #create url for each test to pass to
-                                           #the template
+    for test in tests:
+        if authenticated_userid(request) == 'student':
+            test.url = "test?id="+str(test.id) #create url for each test to pass to
+                                               #the template
+        if authenticated_userid(request) == 'teacher':
+            taken_tests = dbsession.query(TakenTest).filter(TakenTest.test_id == test.id).all()
+            ungraded = False
+            for taken_test in taken_tests:
+                if taken_test.has_ungraded: ungraded = True
+            if ungraded:
+                test.url = "ungraded_tests?id="+str(test.id)
+            else: tests.remove(test)
     messages = []
     messages.append("Course: "+course.course_name)
     instructors = course.instructor.split('%&')
@@ -249,7 +348,12 @@ def view_course(request):
         m += ', ' + instructors[i]
         i += 1
     messages.append(m)
-    messages.append('There are '+str(len(tests))+' tests to take:')
+    if authenticated_userid(request) == 'student':
+        messages.append('There are '+str(len(tests))+' tests to take:')
+    if authenticated_userid(request) == 'teacher':
+        if len(tests) > 0:
+            messages.append('There are ungraded tests in the following tests.')
+        else: messages.append('There are no tests to grade.')
     links = []
     if authenticated_userid(request) == 'teacher':
         links.append(('/create_test?id='+str(course.id),
@@ -409,9 +513,13 @@ def view_grade_test(request):
     ###grade the test submitted test###
     correct = 0
     num_graded = 0
+    taken_test = TakenTest(test.id, request.session['user']['username'], request.session['user']['name'],  num_graded, correct, False)
+    dbsession.add(taken_test)
+    dbsession.flush()
     session = request.session
     question_messages = [] #quesiton_messages will contain reports for the
                            #template about if each quesiton is correct or not
+    ungraded_questions = []
     for question in questions:#loop through and grade each question
         if question.graded: num_graded += 1
         q_num = question.question_num
@@ -420,13 +528,25 @@ def view_grade_test(request):
             user_answer=current_test[str(q_num)]
                                             #get users answer for the question
             grade = grade_question(question, dbsession, user_answer)
+            
+            takenAnswer = TakenAnswer(taken_test.id, question, user_answer, question.graded, grade[0])
+            dbsession.add(takenAnswer)
+            dbsession.flush()
             if question.graded:
                 if grade[0]:
                     correct += grade[1]
                     question_messages.append(str(q_num)+". Correct")
                 else: question_messages.append(str(q_num)+". INCORRECT")
-            else: question_messages.append(str(q_num)+". Not Graded")
+            else:
+                taken_test.has_ungraded = True
+                dbsession.flush()
+                question_messages.append(str(q_num)+". Not Graded")
         else: question_messages.append(str(q_num)+". INCORRECT")
+
+    taken_test.number_graded_questions = num_graded
+    taken_test.correct_graded_questions = correct
+    dbsession.flush()
+
 
     ###create a report to display the result of the test###
     if num_graded > 0:
