@@ -18,31 +18,36 @@
       <div class="middle align-center">
         <p class="app-welcome">${messages[0]}</p>
         <p>${messages[1]}</p>
-        <p>${messages[2]}</p>
-        <table border="1" width="600">
+        <li><a href="${link[0]}">${link[1]}</a></li>
+        <h2>Tests</h2>
+        <table border="1" width="700">
         <tr>
         <td>Tests</td>
+        <td>Edit</td>
         <td>Start Date</td>
         <td>End Date</td>
-        <td>Attempts Remaining</td>
+        <td>Ungraded Assignments</td>
         </tr>
         <tr tal:repeat="test old_tests">
-            <td>${test.name}</td>
+            <td><a href="${test.url}">${test.name}</a></td>
+            <td><a href="${test.edit}">edit</a></td>
             <td>${test.start_time.ctime()[:-13]}</td>
             <td>${test.end_time.ctime()[:-13]}</td>
-            <td>${test.attempts_remaining}</td>
+            <td>${test.ungraded_tests}</td>
         </tr>
         <tr tal:repeat="test current_tests">
             <td><a href="${test.url}">${test.name}</a></td>
+            <td><a href="${test.edit}">edit</a></td>
             <td>${test.start_time.ctime()[:-13]}</td>
             <td>${test.end_time.ctime()[:-13]}</td>
-            <td>${test.attempts_remaining}</td>
+            <td>${test.ungraded_tests}</td>
         </tr>
         <tr tal:repeat="test upcoming_tests">
-            <td>${test.name}</td>
+            <td><a href="${test.url}">${test.name}</a></td>
+            <td><a href="${test.edit}">edit</a></td>
             <td>${test.start_time.ctime()[:-13]}</td>
             <td>${test.end_time.ctime()[:-13]}</td>
-            <td>${test.attempts_remaining}</td>
+            <td>${test.ungraded_tests}</td>
         </tr>
         </table>
       </div>

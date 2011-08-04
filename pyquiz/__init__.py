@@ -49,6 +49,9 @@ def main(global_config, **settings):
     config.add_route('create test', '/create_test',   
                      view='pyquiz.views.view_create_test',
                      view_renderer='templates/create_test.pt')
+    config.add_route('change dates', '/change_dates',   
+                     view='pyquiz.views.view_change_dates',
+                     view_renderer='templates/create_test.pt')
     config.add_route('grade submitted test', '/grade_submitted_test',   
                      view='pyquiz.views.view_grade_submitted_test',
                      view_renderer='templates/grade_submitted_test.pt')
@@ -64,11 +67,11 @@ def main(global_config, **settings):
                      view_renderer='templates/test.pt')
     config.add_route('course', '/course', view='pyquiz.views.view_course',
                      view_renderer='templates/course.pt')
+    config.add_route('course teacher', '/course_teacher', 
+                     view='pyquiz.views.view_course_teacher',
+                     view_renderer='templates/course_teacher.pt')
     config.add_route('grade', '/grade', view='pyquiz.views.view_grade_test',
                      view_renderer='templates/grade_test.pt')
-    config.add_route('choose test', '/choose_test', 
-                     view='pyquiz.views.view_choose_test',
-                     view_renderer='templates/choose_test.pt')
     config.add_route('edit test', '/edit_test', 
                      view='pyquiz.views.view_edit_test',
                      view_renderer='templates/edit_test.pt')

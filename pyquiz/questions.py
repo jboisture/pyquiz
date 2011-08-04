@@ -11,6 +11,18 @@ import deform
 options = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
            'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 
+def attempts_remaining(dbsession, test_id, username):
+    test = dbsession.query(Test).filter(Test.id == test_id).first()
+    taken_tests = dbsession.query(TakenTest).filter(
+                                  TakenTest.test_id == test_id).all()
+    taken_test = None
+    for t in taken_tests:
+        if t.username == username:
+            taken_test = t
+    if taken_test != None:
+        return (test.attempts - taken_test.attempts)
+    else: return test.attempts
+
 def grade_question(question, dbsession, user_answer):
     """
     grades a single question and returns a tuple
@@ -25,7 +37,7 @@ def grade_question(question, dbsession, user_answer):
             return (True, 1)
     if question.question_type == "selectTrue":
         answers = dbsession.query(Answer).filter(
-        Answer.question_id == question.id).all() #load answers
+                        Answer.question_id == question.id).all() #load answers
         total_correct = 0
         user_correct = 0
         for a in answers: #find answer that user selected
@@ -286,7 +298,13 @@ def parse_form_data(controls, course_id, dbsession):
                    #questions,and answers
         if controls[c][0] == "name":
             testname = str(controls[c][1])
-            newTest = Test(testname, course_id)
+            attempts = int(controls[c+1][1])
+            start_time = str(controls[c+2][1]).split('-')
+            end_time = str(controls[c+3][1]).split('-')
+            import datetime
+            start_time = datetime.datetime(int(start_time[0]), int(start_time[1]),int(start_time[2]))
+            end_time = datetime.datetime(int(end_time[0]), int(end_time[1]),int(end_time[2]))
+            newTest = Test(testname, course_id, start_time, end_time, attempts)
             dbsession.add(newTest)
             dbsession.flush()
             foundTest = True

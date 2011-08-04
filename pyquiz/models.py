@@ -9,6 +9,7 @@ from sqlalchemy import Boolean
 from sqlalchemy import String
 from sqlalchemy import Table
 from sqlalchemy import ForeignKey
+from sqlalchemy import DateTime
 from sqlalchemy.orm import *
 
 import datetime
@@ -30,9 +31,13 @@ DBSession = scoped_session(sessionmaker(extension=ZopeTransactionExtension()))
 Base = declarative_base()
 
 class TakenTest(Base):
+    """
+    The TakenTest class creates the takentests table that stores information about
+    all of the tests that have been taken by students.
+    """
     __tablename__ = "takentests"
     id = Column(Integer, primary_key=True)
-    test_id = Column(Integer, ForeignKey("tests.id")) #id of test each
+    test_id = Column(Integer) #id of test each
     username = Column(String)
     student_name = Column(String)
     number_graded_questions = Column(Integer)
@@ -41,8 +46,9 @@ class TakenTest(Base):
                            cascade="all, delete, delete-orphan")
     time_submitted = Column(String)
     has_ungraded = Column(Boolean)
+    attempts = Column(Integer)
     
-    def __init__(self, test_id, username, student_name, number_graded_questions, correct_graded_questions, has_ungraded):
+    def __init__(self, test_id, username, student_name, number_graded_questions, correct_graded_questions, has_ungraded, attempts):
         time = datetime.datetime.now()
         if time.minute < 10:
             time_submitted = str(time.month) + "/" + str(time.day) + '/' + str(time.year) + " at " + str(time.hour%12) + ":0" + str(time.minute)
@@ -57,8 +63,13 @@ class TakenTest(Base):
         self.number_graded_questions = number_graded_questions
         self.correct_graded_questions = correct_graded_questions
         self.has_ungraded = has_ungraded
+        self.attempts = attempts
 
 class TakenAnswer(Base):
+    """
+    The TakenAnswer class creates the takenanswers table that stores information about
+    all of the answers submitted by students.
+    """
     __tablename__ = "takenanswers"
     id = Column(Integer, primary_key=True)
     takentest_id = Column(Integer, ForeignKey("takentests.id"))
@@ -84,12 +95,18 @@ class Test(Base):
     course = Column(String, ForeignKey("courses.id"))
                                    #course variable that must be a String
     questions = relationship("Question", backref = 'tests') #establishes a 
-                            #relationship between the test and it's questions  
+                            #relationship between the test and it's questions
+    start_time = Column(DateTime)
+    end_time = Column(DateTime)
+    attempts = Column(Integer)
     
-    def __init__(self, name, course):
+    def __init__(self, name, course, start_time, end_time, attempts):
         """init function to create a new Test object"""
         self.name = name
         self.course = course
+        self.start_time = start_time
+        self.end_time = end_time
+        self.attempts = attempts
 
 
 class Question(Base):
@@ -135,6 +152,10 @@ class Answer(Base):
         self.correct = correct
 
 class Course(Base):
+    """
+    The Course class creates the courses table that stores information about
+    all of the courses.
+    """
     __tablename__ = 'courses'
     id = Column(Integer, primary_key=True)
     course_id = Column(String)

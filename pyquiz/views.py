@@ -24,6 +24,8 @@ from deform import widget
 
 from questions import *
 
+import datetime
+
 
 
 def view_create_test(request):
@@ -43,9 +45,14 @@ def view_create_test(request):
         dbsession = DBSession()
         parse_form_data(controls, course_id, dbsession)
         return HTTPFound(location='/course?id='+str(course_id)) #redirect to homepage
-    return {'form':myform.render()}
+    now = datetime.datetime.now()
+    appstruct = {'start_date':now, 'end_date':now}
+    return {'form':myform.render(appstruct)}
 
 def view_add_questions(request):
+    """
+    this is the view to add a question to an existing test
+    """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
     test_id = int(request.GET["id"])
@@ -59,14 +66,54 @@ def view_add_questions(request):
         controls = request.POST.items() # get the data from the form
         parse_add_form_data(controls, dbsession, question_num, test)
         return HTTPFound(location='/edit_test?id='+str(test_id)) 
-                                                    #redirect to homepage
+                                                    #redirect to the tests edit page
     schema = AddQuestionsSchema()
     myform = Form(schema, buttons=('add questions',), 
                     use_ajax=True)
     return {'form':myform.render()}
+
+def view_change_dates(request):
+    """
+    ###incomplete###
+    this is the view to change the start and end dates of an existing test
+    """
+    test_id = int(request.GET["id"])
+    dbsession = DBSession()
+    test = dbsession.query(Test).filter(Test.id==test_id).first()
+    post = request.POST
+    if 'Change' in post:
+        controls = request.POST.items() # get the data from the form
+        start_time = str(controls[2][1]).split('-')
+        end_time = str(controls[3][1]).split('-')
+        start_time = datetime.datetime(int(start_time[0]), int(start_time[1]),int(start_time[2]))
+        end_time = datetime.datetime(int(end_time[0]), int(end_time[1]),int(end_time[2]))
+        test.start_time = start_time
+        test.end_time = end_time
+        dbsession.flush()
+        return HTTPFound(location='/edit_test?id='+str(test_id))
+
+    from colander import Date, Range
+    class ChangeDatesSchema(colander.Schema):
+        start_date =SchemaNode( Date(),
+                               validator=Range(
+                                         min=datetime.date(2010, 5, 5),
+                                         min_err=('${val} is earlier than earliest date ${min}')))
+        end_date = SchemaNode( Date(),
+                               validator=Range(
+                                         min=datetime.date(2010, 5, 5),
+                                         min_err=('${val} is earlier than earliest date ${min}')))
+    schema = ChangeDatesSchema()
+    myform = Form(schema, buttons=('Change',), 
+                    use_ajax=True)
+    now = datetime.datetime.now()
+    appstruct = {'start_date':test.start_time, 'end_date':test.end_time}
+    return {'form':myform.render(appstruct)}
     
 
 def view_edit_question(request):
+    """
+    this view allows a teacher to edit an existing question in an existing test
+    """
     ###load the question number and test id###
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
@@ -110,6 +157,9 @@ def view_edit_question(request):
     return {"test":test,'form':form.render(appstruct), 'question': question}
 
 def view_delete_test(request):
+    """
+    This view allows teachers to delete a test in a course they teach
+    """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
     test_id = int(request.GET["id"])
@@ -144,6 +194,9 @@ def view_delete_test(request):
     
 
 def view_edit_test(request):
+    """
+    This view allows a teacher to edit an existing test
+    """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
     test_id = int(request.GET["id"]) #get test id
@@ -157,6 +210,7 @@ def view_edit_test(request):
 
     delete_link = "/delete_test?id="+str(test.id)
     add_link = "/add_questions?id="+str(test.id)
+    change_dates_link = "/change_dates?id="+str(test.id)
 
     ###create a list of questions, each question will be of the form###
     ###("question #: QUESTION STATUS", "/test?id=#;question#")###
@@ -166,35 +220,8 @@ def view_edit_test(request):
                  "/edit_question?id="+str(test_id)+";question="+str(i+1)))
     
     return {"test":test,"questions":questions,
-            'delete_link':delete_link,'add_link':add_link}
-
-def view_choose_test(request):
-    """
-    View that controls page used to select a test to edit
-    """
-    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
-        return HTTPFound(location='/')
-    if 'current_test' in request.session.keys(): 
-        request.session.pop('current_test')
-    course_id = int(request.GET["id"])
-    dbsession = DBSession()
-    tests = dbsession.query(Test).filter(Test.course == course_id).all()
-    for test in tests: 
-        test.url = "edit_test?id="+str(test.id) 
-                                        #create url for each test to pass to 
-                                        #the template
-    course = dbsession.query(Course).filter(Course.id == course_id).first()
-    messages = []
-    messages.append("Course: "+course.course_name)
-    instructors = course.instructor.split('%&')
-    m = "Instructor(s): " + instructors[0]
-    i = 1
-    while i < len(instructors):
-        m += ', ' + instructors[i]
-        i += 1
-    messages.append(m)
-    messages.append('There are currently '+str(len(tests))+' tests:')
-    return {'tests':tests, 'messages':messages}
+            'delete_link':delete_link,'add_link':add_link,
+            "change_dates_link":change_dates_link}
 
 
 def view_index(request):
@@ -228,6 +255,10 @@ def view_index(request):
 
 
 def view_ungraded_tests(request):
+    """
+    This view lets a teacher view all of the instances of a test that have been taken
+    and have tests still have questions waiting for teachers to grade.
+    """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')  
     if "current_test" in request.session.keys():
@@ -247,6 +278,9 @@ def view_ungraded_tests(request):
     return {'test': test, 'taken_tests': ungraded_tests, 'message':message}
 
 def view_grade_question(request):
+    """
+    This view lets a teacher grade aquestion thatcan not be graded automatically
+    """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')  
     if "current_test" in request.session.keys():
@@ -294,6 +328,10 @@ def view_grade_question(request):
 
 
 def view_grade_submitted_test(request):
+    """
+    This view lets a teacher view information on a test that a student has submitted and
+    provides links to ungraded questions in the test so the teacher may grade them.
+    """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')  
     if "current_test" in request.session.keys():
@@ -302,6 +340,12 @@ def view_grade_submitted_test(request):
     dbsession = DBSession()
     taken_test = dbsession.query(TakenTest).filter(TakenTest.id==test_id).first()
     test = dbsession.query(Test).filter(Test.id==taken_test.test_id).first()
+    if attempts_remaining(dbsession, test.id, request.session['user']['username']) <= 0:
+        return HTTPFound(location='/')
+    if (test.start_time - datetime.datetime.now()) > (datetime.timedelta(0)):
+        return HTTPFound(location='/')
+    if (test.end_time - datetime.datetime.now()) < (datetime.timedelta(0)):
+        return HTTPFound(location='/')
     messages = []
     messages.append("Test Name: " + test.name)
     messages.append("Taken by " + taken_test.student_name + " on " + taken_test.time_submitted)
@@ -317,28 +361,43 @@ def view_grade_submitted_test(request):
             answer.html += u'. Not Graded</a>'
     return {'messages':messages, 'answers':answers}
             
-
-def view_course(request):
-    if authenticated_userid(request) == None or 'user' not in request.session.keys():
-        return HTTPFound(location='/')
+def view_course_teacher(request):
     if 'current_test' in request.session.keys(): 
         request.session.pop('current_test')
     course_id = int(request.GET["id"])
+    if authenticated_userid(request) == 'student':
+        return HTTPFound(location='/course?id='+str(course_id))
     dbsession = DBSession()
     course = dbsession.query(Course).filter(Course.id == course_id).first()
     tests = dbsession.query(Test).filter(Test.course == course_id).all() #load all tests
     for test in tests:
-        if authenticated_userid(request) == 'student':
-            test.url = "test?id="+str(test.id) #create url for each test to pass to
-                                               #the template
-        if authenticated_userid(request) == 'teacher':
+        test.edit = "edit_test?id="+str(test.id) 
+        taken_tests = dbsession.query(TakenTest).filter(TakenTest.test_id == test.id).all()
+        ungraded = False
+        for taken_test in taken_tests:
+            if taken_test.has_ungraded: ungraded = True
+        test.url = "ungraded_tests?id="+str(test.id)
+        if ungraded:
             taken_tests = dbsession.query(TakenTest).filter(TakenTest.test_id == test.id).all()
-            ungraded = False
+            ungraded_tests = 0 
             for taken_test in taken_tests:
-                if taken_test.has_ungraded: ungraded = True
-            if ungraded:
-                test.url = "ungraded_tests?id="+str(test.id)
-            else: tests.remove(test)
+                if taken_test.has_ungraded:
+                    ungraded_tests +=1
+            test.ungraded_tests = ungraded_tests
+        else:
+            test.ungraded_tests = 0
+    for t in tests:
+        if 'url' not in dir(t):
+            tests.remove(t)
+    old_tests = []
+    current_tests = []
+    upcoming_tests = []
+    for test in tests:
+        if (test.start_time - datetime.datetime.now()) > (datetime.timedelta(0)):
+            upcoming_tests.append(test)
+        elif (test.end_time - datetime.datetime.now()) < (datetime.timedelta(0)):
+            old_tests.append(test)
+        else: current_tests.append(test)
     messages = []
     messages.append("Course: "+course.course_name)
     instructors = course.instructor.split('%&')
@@ -348,19 +407,68 @@ def view_course(request):
         m += ', ' + instructors[i]
         i += 1
     messages.append(m)
-    if authenticated_userid(request) == 'student':
-        messages.append('There are '+str(len(tests))+' tests to take:')
+    if len(tests) > 0:
+        messages.append('There are ungraded tests in the following tests.')
+    else: messages.append('There are no tests to grade.')
+    link = ('/create_test?id='+str(course.id),
+                               'Create A New Test')
+    return {'old_tests':old_tests, 'current_tests':current_tests,'upcoming_tests':upcoming_tests,
+            'messages':messages, 'link':link}
+
+
+
+def view_course(request):
+    """
+    This view lets a student or a teacher view a course.  To a student it will let them
+    take any open tests that they need to take and to a teacher it will provide links to 
+    grade tests, create tests, and edit tests.
+    """
+    if authenticated_userid(request) == None or 'user' not in request.session.keys():
+        return HTTPFound(location='/')
+    course_id = int(request.GET["id"])
+    if authenticated_userid(request) == 'teacher':
+        return HTTPFound(location='/course_teacher?id='+str(course_id))
+    if 'current_test' in request.session.keys(): 
+        request.session.pop('current_test')
+    dbsession = DBSession()
+    course = dbsession.query(Course).filter(Course.id == course_id).first()
+    tests = dbsession.query(Test).filter(Test.course == course_id).all() #load all tests
+    for test in tests:
+        test.url = "test?id="+str(test.id) #create url for each test to pass to
+                                               #the template
+        test.attempts_remaining = attempts_remaining(dbsession, test.id, request.session['user']['username'])
+    for t in tests:
+        if 'url' not in dir(t):
+            tests.remove(t)
+    old_tests = []
+    current_tests = []
+    upcoming_tests = []
+    for test in tests:
+        if (test.start_time - datetime.datetime.now()) > (datetime.timedelta(0)):
+            upcoming_tests.append(test)
+        elif (test.end_time - datetime.datetime.now()) < (datetime.timedelta(0)):
+            old_tests.append(test)
+        else:
+            if test.attempts_remaining <= 0:
+                old_tests.append(test)
+            else:
+                current_tests.append(test)
+    messages = []
+    messages.append("Course: "+course.course_name)
+    instructors = course.instructor.split('%&')
+    m = "Instructor(s): " + instructors[0]
+    i = 1
+    while i < len(instructors):
+        m += ', ' + instructors[i]
+        i += 1
+    messages.append(m)
+    messages.append('There are '+str(len(tests))+' tests to take:')
     if authenticated_userid(request) == 'teacher':
         if len(tests) > 0:
             messages.append('There are ungraded tests in the following tests.')
         else: messages.append('There are no tests to grade.')
-    links = []
-    if authenticated_userid(request) == 'teacher':
-        links.append(('/create_test?id='+str(course.id),
-                                   'Create A New Test'))
-        links.append(('/choose_test?id='+str(course.id),
-                               'Edit An Existing Test'))
-    return {'tests':tests, 'messages':messages, 'links':links}
+    return {'old_tests':old_tests, 'current_tests':current_tests,
+            'upcoming_tests':upcoming_tests, 'messages':messages}
 
 
 
@@ -382,6 +490,12 @@ def view_question(request):
     ###load the test and it's questions and their answers from the database###
     dbsession = DBSession()
     test = dbsession.query(Test).filter(Test.id==test_id).first()
+    if attempts_remaining(dbsession, test.id, request.session['user']['username']) <= 0:
+        return HTTPFound(location='/')
+    if (test.start_time - datetime.datetime.now()) > (datetime.timedelta(0)):
+        return HTTPFound(location='/')
+    if (test.end_time - datetime.datetime.now()) < (datetime.timedelta(0)):
+        return HTTPFound(location='/')
     all_questions = dbsession.query(Question).filter(
                                     Question.test_id==test.id).all()
     total_questions = len(all_questions)
@@ -467,6 +581,12 @@ def view_test(request):
     all_questions = dbsession.query(Question).filter(
                                     Question.test_id==test.id).all()
     num_questions = len(all_questions)
+    if attempts_remaining(dbsession, test.id, request.session['user']['username']) <= 0:
+        return HTTPFound(location='/')
+    if (test.start_time - datetime.datetime.now()) > (datetime.timedelta(0)):
+        return HTTPFound(location='/')
+    if (test.end_time - datetime.datetime.now()) < (datetime.timedelta(0)):
+        return HTTPFound(location='/')
 
     ###create the "current_test" in session if it is not already there###
     if "current_test" not in request.session.keys():
@@ -513,9 +633,26 @@ def view_grade_test(request):
     ###grade the test submitted test###
     correct = 0
     num_graded = 0
-    taken_test = TakenTest(test.id, request.session['user']['username'], request.session['user']['name'],  num_graded, correct, False)
-    dbsession.add(taken_test)
-    dbsession.flush()
+    taken_tests = dbsession.query(TakenTest).filter(TakenTest.test_id == test.id).all()
+    attempts = 1
+    for t in taken_tests:
+        if t.username == request.session['user']['username']:
+            attempts = t.attempts + 1
+            taken_test = dbsession.query(TakenTest).filter(TakenTest.id == t.id).first()
+            taken_test.attempts = attempts
+            dbsession.flush()
+            taken_answers = dbsession.query(TakenAnswer).filter(
+                                            TakenAnswer.takentest_id == taken_test.id).all()
+            for answer in taken_answers:
+                dbsession.delete(answer)
+                dbsession.flush()
+    if attempts == 1:
+        taken_test = TakenTest(test.id, request.session['user']['username'], 
+                               request.session['user']['name'],  num_graded,
+                               correct, False, attempts)
+
+        dbsession.add(taken_test)
+        dbsession.flush()
     session = request.session
     question_messages = [] #quesiton_messages will contain reports for the
                            #template about if each quesiton is correct or not

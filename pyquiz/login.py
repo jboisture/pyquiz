@@ -10,6 +10,9 @@ from pyquiz.models import DBSession, Course
 from pyquiz.security import USERS
 
 def schooltool_login(username, password):
+    """
+    This method gets information from schooltool about a users courses and their role
+    """
     if username == "student":
         user_info = {'username': 'student',
                      'name': 'student student',
@@ -33,9 +36,9 @@ def schooltool_login(username, password):
     for course in user_info['courses']:
         c = dbsession.query(Course).filter(Course.course_id == course[0]).all()
         if len(c) == 0:
-            if user_info['role'] != 'teacher':
+            if 'teacher' not in user_info['role']:
                  new_course = Course(course[0], course[1], '')
-            if user_info['role'] == 'teacher':
+            if 'teacher' in user_info['role']:
                  new_course = Course(course[0], course[1], user_info['name'])
             dbsession.add(new_course)
             dbsession.flush()
@@ -51,6 +54,9 @@ def schooltool_login(username, password):
 
 
 def login(request):
+    """
+    This method lets a user login to pyquiz
+    """
     if unauthenticated_userid(request) != None and 'user' in request.session.keys():
         return HTTPFound(location='/index')
     message = ''
@@ -75,6 +81,9 @@ def login(request):
         )
     
 def logout(request):
+    """
+    This method logs a user out of pyquiz
+    """
     headers = forget(request)
     if 'user' in request.session.keys():
         request.session.pop('user')

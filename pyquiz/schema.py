@@ -9,6 +9,8 @@ from colander import SchemaNode
 from colander import String
 from colander import Boolean
 from colander import Schema
+from colander import Date
+from colander import Range
 
 from deform import ValidationFailure
 from deform import Form
@@ -94,7 +96,17 @@ class TestSchema(Schema):
     """
     Schema that stores the test being created.
     """
+    import datetime
     name = SchemaNode(String())
+    attempts = SchemaNode(String())
+    start_date =SchemaNode( Date(),
+                validator=Range(
+                    min=datetime.datetime.now(),
+                    min_err=('${val} is earlier than earliest date ${min}')))
+    end_date = SchemaNode( Date(),
+                validator=Range(
+                    min=datetime.datetime.now(),
+                    min_err=('${val} is earlier than earliest date ${min}')))
     questions = Questions()
     short_answer_questions = ShortAnswerQuestions()
 
