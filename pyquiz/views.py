@@ -34,6 +34,7 @@ def view_create_test(request):
     """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
+    main = get_renderer('templates/master.pt').implementation()
 
     course_id = int(request.GET["id"])
 
@@ -47,7 +48,7 @@ def view_create_test(request):
         return HTTPFound(location='/course?id='+str(course_id)) #redirect to homepage
     now = datetime.datetime.now()
     appstruct = {'start_date':now, 'end_date':now}
-    return {'form':myform.render(appstruct)}
+    return {'form':myform.render(appstruct), 'main': main}
 
 def view_add_questions(request):
     """
@@ -55,6 +56,7 @@ def view_add_questions(request):
     """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
+    main = get_renderer('templates/master.pt').implementation()
     test_id = int(request.GET["id"])
     dbsession = DBSession()
     test = dbsession.query(Test).filter(Test.id==test_id).first()
@@ -70,13 +72,14 @@ def view_add_questions(request):
     schema = AddQuestionsSchema()
     myform = Form(schema, buttons=('add questions',), 
                     use_ajax=True)
-    return {'form':myform.render()}
+    return {'form':myform.render(), 'main': main}
 
 def view_change_dates(request):
     """
     ###incomplete###
     this is the view to change the start and end dates of an existing test
     """
+    main = get_renderer('templates/master.pt').implementation()
     test_id = int(request.GET["id"])
     dbsession = DBSession()
     test = dbsession.query(Test).filter(Test.id==test_id).first()
@@ -107,7 +110,7 @@ def view_change_dates(request):
                     use_ajax=True)
     now = datetime.datetime.now()
     appstruct = {'start_date':test.start_time, 'end_date':test.end_time}
-    return {'form':myform.render(appstruct)}
+    return {'form':myform.render(appstruct), 'main': main}
     
 
 def view_edit_question(request):
@@ -117,6 +120,7 @@ def view_edit_question(request):
     ###load the question number and test id###
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
+    main = get_renderer('templates/master.pt').implementation()
     test_id = int(request.GET["id"])
     quesiton_num = 1
     try:
@@ -154,7 +158,7 @@ def view_edit_question(request):
         appstruct = {'text':(question.question)}
     form = Form(schema, buttons=('submit changes',), 
                   use_ajax=True)
-    return {"test":test,'form':form.render(appstruct), 'question': question}
+    return {"test":test,'form':form.render(appstruct), 'question': question, 'main': main}
 
 def view_delete_test(request):
     """
@@ -162,6 +166,7 @@ def view_delete_test(request):
     """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
+    main = get_renderer('templates/master.pt').implementation()
     test_id = int(request.GET["id"])
     dbsession = DBSession()
     test = dbsession.query(Test).filter(Test.id == test_id).first()
@@ -190,7 +195,7 @@ def view_delete_test(request):
         pass
     schema = deleteForm()
     form = deform.Form(schema, buttons=('yes','no'))
-    return {'form':form.render(), 'message':message}
+    return {'form':form.render(), 'message':message, 'main': main}
     
 
 def view_edit_test(request):
@@ -199,6 +204,7 @@ def view_edit_test(request):
     """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')
+    main = get_renderer('templates/master.pt').implementation()
     test_id = int(request.GET["id"]) #get test id
 
     ###load test and questions from database###
@@ -221,7 +227,7 @@ def view_edit_test(request):
     
     return {"test":test,"questions":questions,
             'delete_link':delete_link,'add_link':add_link,
-            "change_dates_link":change_dates_link}
+            "change_dates_link":change_dates_link, 'main': main}
 
 
 def view_index(request):
@@ -230,6 +236,7 @@ def view_index(request):
     """
     if authenticated_userid(request) == None or 'user' not in request.session.keys():
         return HTTPFound(location='/')
+    main = get_renderer('templates/master.pt').implementation()
     if 'current_test' in request.session.keys(): 
         request.session.pop('current_test') #remove current_test from session
     userinfo = request.session['user']
@@ -251,7 +258,7 @@ def view_index(request):
         messages[2] == 'You have no classes'
     for course in courses:
         course.url = 'course?id='+str(course.id)
-    return {'messages': messages, 'courses': courses}
+    return {'messages': messages, 'courses': courses, 'main': main}
 
 
 def view_ungraded_tests(request):
@@ -261,6 +268,7 @@ def view_ungraded_tests(request):
     """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')  
+    main = get_renderer('templates/master.pt').implementation()
     if "current_test" in request.session.keys():
         request.session.pop('current_test')
     test_id = int(request.GET["id"])
@@ -275,7 +283,7 @@ def view_ungraded_tests(request):
             taken_test.link = "grade test by " + taken_test.student_name
     message = ''
     if len(ungraded_tests) == 0: message = 'There are no tests to grade'
-    return {'test': test, 'taken_tests': ungraded_tests, 'message':message}
+    return {'test': test, 'taken_tests': ungraded_tests, 'message':message, 'main': main}
 
 def view_grade_question(request):
     """
@@ -283,6 +291,7 @@ def view_grade_question(request):
     """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')  
+    main = get_renderer('templates/master.pt').implementation()
     if "current_test" in request.session.keys():
         request.session.pop('current_test')
     question_id = int(request.GET["id"])
@@ -323,7 +332,7 @@ def view_grade_question(request):
         pass
     schema = gradeForm()
     form = deform.Form(schema, buttons=('correct','incorrect'))
-    return {"message": messages, "form": form.render()}
+    return {"message": messages, "form": form.render(), 'main': main}
     
 
 
@@ -334,6 +343,7 @@ def view_grade_submitted_test(request):
     """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')  
+    main = get_renderer('templates/master.pt').implementation()
     if "current_test" in request.session.keys():
         request.session.pop('current_test')
     test_id = int(request.GET["id"])
@@ -359,7 +369,7 @@ def view_grade_submitted_test(request):
         else:
             answer.html = u'<a href="grade_question?id='+str(answer.id)+u'">'+str(answer.question_num)
             answer.html += u'. Not Graded</a>'
-    return {'messages':messages, 'answers':answers}
+    return {'messages':messages, 'answers':answers, 'main': main}
             
 def view_course_teacher(request):
     if 'current_test' in request.session.keys(): 
@@ -367,6 +377,7 @@ def view_course_teacher(request):
     course_id = int(request.GET["id"])
     if authenticated_userid(request) == 'student':
         return HTTPFound(location='/course?id='+str(course_id))
+    main = get_renderer('templates/master.pt').implementation()
     dbsession = DBSession()
     course = dbsession.query(Course).filter(Course.id == course_id).first()
     tests = dbsession.query(Test).filter(Test.course == course_id).all() #load all tests
@@ -413,7 +424,7 @@ def view_course_teacher(request):
     link = ('/create_test?id='+str(course.id),
                                'Create A New Test')
     return {'old_tests':old_tests, 'current_tests':current_tests,'upcoming_tests':upcoming_tests,
-            'messages':messages, 'link':link}
+            'messages':messages, 'link':link, 'main': main}
 
 
 
@@ -428,6 +439,7 @@ def view_course(request):
     course_id = int(request.GET["id"])
     if authenticated_userid(request) == 'teacher':
         return HTTPFound(location='/course_teacher?id='+str(course_id))
+    main = get_renderer('templates/master.pt').implementation()
     if 'current_test' in request.session.keys(): 
         request.session.pop('current_test')
     dbsession = DBSession()
@@ -468,7 +480,7 @@ def view_course(request):
             messages.append('There are ungraded tests in the following tests.')
         else: messages.append('There are no tests to grade.')
     return {'old_tests':old_tests, 'current_tests':current_tests,
-            'upcoming_tests':upcoming_tests, 'messages':messages}
+            'upcoming_tests':upcoming_tests, 'messages':messages, 'main': main}
 
 
 
@@ -479,6 +491,7 @@ def view_question(request):
     """
     if authenticated_userid(request) == None or 'user' not in request.session.keys():
         return HTTPFound(location='/')
+    main = get_renderer('templates/master.pt').implementation()
     ###load the question number and test id###
     test_id = int(request.GET["id"])
     quesiton_num = 1
@@ -561,8 +574,8 @@ def view_question(request):
                            buttons=('next question',))
     if question.question_type == "shortAnswer":
         return {"test":test,'form':form.render(schema[1]),
-                'link':'/test?id='+str(test.id)}
-    return {"test":test,'form':form.render(), 'link':'/test?id='+str(test.id)}
+                'link':'/test?id='+str(test.id), 'main': main}
+    return {"test":test,'form':form.render(), 'link':'/test?id='+str(test.id), 'main': main}
 
     
 
@@ -573,6 +586,7 @@ def view_test(request):
     """
     if authenticated_userid(request) == None or 'user' not in request.session.keys():
         return HTTPFound(location='/')
+    main = get_renderer('templates/master.pt').implementation()
     test_id = int(request.GET["id"]) #get test id
 
     ###load test and questions from database###
@@ -608,7 +622,7 @@ def view_test(request):
                 questions.append(("question "+str(i+1)+": Answered",
                          "/question?id="+str(test_id)+";question="+str(i+1)))
     
-    return {"test":test,"questions":questions,"link":"/grade?id="+str(test_id)}
+    return {"test":test,"questions":questions,"link":"/grade?id="+str(test_id), 'main': main}
 
 def view_grade_test(request):
     """
@@ -616,7 +630,8 @@ def view_grade_test(request):
     """
     if authenticated_userid(request) == None or 'user' not in request.session.keys():
         return HTTPFound(location='/')
-
+    main = get_renderer('templates/master.pt').implementation()
+    
     ###load the test and it's questions froms the database###
     test_id = int(request.GET["id"])
     dbsession = DBSession()
@@ -693,7 +708,7 @@ def view_grade_test(request):
         message="There were no graded questions."
     session.pop("current_test") #remove "current_test" from sesssion
 
-    return {"test":test, "message":message,"questions":question_messages}
+    return {"test":test, "message":message,"questions":question_messages, 'main': main}
         
                                   
    
