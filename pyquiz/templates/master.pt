@@ -18,24 +18,21 @@
           src="static/deform/jquery.maskedinput-1.2.2.min.js"></script>
   <script type="text/javascript"
           src="static/deform/deform.js"></script>
-     <span tal:condition='red'> <meta http-equiv='refresh' content="2; url=${request.application_url}/${red}"/></span>
+   
      </head>
   <body>
-     <div class='wrapper'>
+     <div class='schooltool'>
      <div class="header">
-        <div class="headerbar"> 
-        </div>
+      <ul class='second-nav'>
+  <a href="/">return home</a> <a href="/logout">logout</a>
      </div>
      <div class="content">
-       <h2> ${name} </h2>
-       <hr />
        <span metal:define-slot="content">
           CONTENT
        </span>
      </div>
     <div class="push"></div>
     </div>
-   </span>
   </body>
    </span>
    <script type="text/javascript">
