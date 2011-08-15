@@ -5,6 +5,7 @@ the pages of pyquiz.
 
 from pyramid.request import Request
 from pyramid.httpexceptions import HTTPFound
+from pyramid.renderers import get_renderer
 
 from schema import TestSchema, EditQuestionSchema
 from schema import EditShortAnswerQuestionSchema, AddQuestionsSchema
@@ -234,6 +235,7 @@ def view_index(request):
     """
     View associated with the home page of the app.
     """
+    main = get_renderer('templates/master.pt').implementation()
     if authenticated_userid(request) == None or 'user' not in request.session.keys():
         return HTTPFound(location='/')
     main = get_renderer('templates/master.pt').implementation()

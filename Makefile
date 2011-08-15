@@ -19,7 +19,7 @@ buildout bin/paster bin/nosetests: bin/buildout buildout.cfg bootstrap.py
 
 .PHONY: run
 run: build
-	bin/paster serve $(PASTE_INI_FILE)
+	bin/paster serve $(PASTE_INI_FILE) --reload
 
 .PHONY: clean
 clean:
