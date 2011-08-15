@@ -23,16 +23,18 @@
   <body>
      <div class='schooltool'>
      <div class="header">
+	<h1 class='brand'>PyQuiz</h1>
+	<ul class='navigation'> Home </ul>
       <ul class='second-nav'>
   <a href="/">return home</a> <a href="/logout">logout</a>
-     </div>
+      </ul>
      <div class="content">
        <span metal:define-slot="content">
           CONTENT
        </span>
      </div>
-    <div class="push"></div>
-    </div>
+      </div>
+      </div>
   </body>
    </span>
    <script type="text/javascript">
