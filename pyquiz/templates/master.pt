@@ -1,0 +1,44 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+       <html xmlns="http://www.w3.org/1999/xhtml"
+       xmlns:tal="http://xml.zope.org/namespaces/tal"
+       xmlns:metal="http://xml.zope.org/namespaces/metal" > 
+   <span metal:define-macro="master">
+     <head>     
+          <title>NHSSL</title>         
+          <link rel='stylesheet' href="static/style.css" type="text/css"/>  
+          <link rel="stylesheet" href="static/deform/deform.css" type="text/css" />
+          <link rel="stylesheet" href="static/deform/theme.css" type="text/css" />
+  <!-- JavaScript -->
+  <script type="text/javascript"
+          src="static/deform/jquery-1.4.2.min.js"></script>
+  <script type="text/javascript"
+          src="static/deform/jquery.form.js"></script>
+  <script type="text/javascript"
+          src="static/deform/jquery.maskedinput-1.2.2.min.js"></script>
+  <script type="text/javascript"
+          src="static/deform/deform.js"></script>
+     <span tal:condition='red'> <meta http-equiv='refresh' content="2; url=${request.application_url}/${red}"/></span>
+     </head>
+  <body>
+     <div class='wrapper'>
+     <div class="header">
+        <div class="headerbar"> 
+        </div>
+     </div>
+     <div class="content">
+       <h2> ${name} </h2>
+       <hr />
+       <span metal:define-slot="content">
+          CONTENT
+       </span>
+     </div>
+    <div class="push"></div>
+    </div>
+   </span>
+  </body>
+   </span>
+   <script type="text/javascript">
+   deform.load()
+   </script>
+ </html>
