@@ -1,0 +1,38 @@
+body{
+}
+
+div.header{
+ background-color: #FFFFFF;
+ z-index: 2;
+}
+
+h1.brand{
+ color: #FFFFFF;
+ font-size: 36px;
+ line-height: 40px;
+ margin-top: 0;
+ position: absolute;
+ right: 16px;
+ top: 12px;
+ z-index: 1;
+}
+
+ul.navigation{
+background-color: #AA0000;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 1px 6px #BBBBBB;
+    height: 64px;
+    padding-left: 16px;
+    position: relative;
+}
+
+ul.second-nav{
+background-color: #F7F7F7;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 1px 6px #BBBBBB;
+    height: 40px;
+    margin-left: 16px;
+    margin-right: 16px;
+    position: relative;
+    text-align: right;
+}
