@@ -1,38 +1,295 @@
-body{
+
+/*
+
+  Base CSS:
+
+  - body
+  - fonts, font sizes
+  - header, page and footer layout
+
+*/
+
+@media all {
+
+/* General elements */
+
+body {
+    background-color: #ffffff;
+    color: #333333;
+    margin:0px;
 }
 
-div.header{
- background-color: #FFFFFF;
- z-index: 2;
+body, textarea, select {
+    font-family: 'Ubuntubeta', 'Ubuntu', 'Bitstream Vera Sans',
+                 'DejaVu Sans', Tahoma, sans-serif;
 }
 
-h1.brand{
- color: #FFFFFF;
- font-size: 36px;
- line-height: 40px;
- margin-top: 0;
- position: absolute;
- right: 16px;
- top: 12px;
- z-index: 1;
+h1 {
+    font-size: 36px;
+    line-height: 40px;
 }
 
-ul.navigation{
-background-color: #AA0000;
-    border-radius: 0 0 4px 4px;
-    box-shadow: 0 1px 6px #BBBBBB;
+h2 {
+    font-size: 24px;
+    line-height: 28px;
+    margin-bottom: 8px;
+    margin-top: 16px;
+}
+
+h3 {
+    font-size: 16px;
+    line-height: 20px;
+    margin-bottom: 8px;
+    margin-top: 16px;
+}
+
+a, a:link, a:visited, a:active {
+    color: #aa0000;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.active a:hover {
+    text-decoration: none;
+}
+
+p {
+    font-size: 12px;
+    line-height: 16px;
+    margin-bottom: 8px;
+}
+
+strong {
+    font-weight: bold;
+}
+
+em {
+    font-style: italic;
+}
+
+li {
+    font-size: 12px;
+    line-height: 16px;
+}
+
+p.small {
+    font-size: 10px;
+    line-height: 14px;
+}
+
+pre {
+    overflow: auto;
+}
+
+a.modify {
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+a.modify img {
+    border: none;
+}
+
+/* Layout */
+
+.schooltool > .header,
+.schooltool > .page,
+.schooltool > .footer {
+    margin: 0 auto;
+    position: relative;
+    width: 976px;
+}
+
+.schooltool > .header {
+    -moz-box-shadow: 0px -3px 4px #bbbbbb;
+    -webkit-box-shadow: 0px -3px 4px #bbbbbb;
+    box-shadow: 0px -3px 4px #bbbbbb;
+}
+
+.schooltool > .page {
+    margin-top: -4px; /* Hack to close the  */
+    padding-top: 4px; /* gap in the shadows */
+
+    -moz-border-radius: 0px 0px 4px 4px;
+    border-radius: 0px 0px 4px 4px;
+
+    -moz-box-shadow: 0px 1px 4px #bbbbbb;
+    -webkit-box-shadow: 0px 1px 4px #bbbbbb;
+    box-shadow: 0px 1px 4px #bbbbbb;
+}
+
+.schooltool > .header {
+    background-color: #ffffff;
+    z-index: 2;
+}
+
+.schooltool > .page {
+    background-color: #ffffff;
+    padding-bottom: 64px;
+    z-index: 1;
+}
+
+.schooltool > .footer {
+    clear: both;
+    z-index: 0;
+}
+
+.schooltool > .footer > p {
+    color: #aea79f;
+    font-size: 10px;
+    line-height: 14px;
+    padding: 0px 16px 2px 16px;
+}
+
+.schooltool > .footer a {
+    font-size: 10px;
+    line-height: 14px;
+}
+
+.schooltool > .footer > p.server-info {
+    margin-bottom: 0px;
+    padding-top: 4px;
+}
+
+/* Header - main navigation, second navigation, headinfo, breadcrumbs*/
+
+.header > h1.brand {
+    color: #ffffff;
+    font-size: 36px;
+    line-height: 40px;
+    margin-top: 0px;
+    position: absolute;
+    right: 16px;
+    top: 12px;
+    z-index: 1;
+}
+
+.header ul.navigation {
+    background-color: #aa0000;
     height: 64px;
     padding-left: 16px;
     position: relative;
+    margin-bottom:0;
+    margin-top:0px;
+    -moz-border-radius: 0px 0px 4px 4px;
+    border-radius: 0px 0px 4px 4px;
+
+    -moz-box-shadow: 0px 1px 6px #bbbbbb;
+    -webkit-box-shadow: 0px 1px 6px #bbbbbb;
+    box-shadow: 0px 1px 6px #bbbbbb;
 }
 
-ul.second-nav{
-background-color: #F7F7F7;
-    border-radius: 0 0 4px 4px;
-    box-shadow: 0 1px 6px #BBBBBB;
+.header ul.navigation li {
+    display: block;
+    float: left;
+    padding: 0 1px;
+}
+
+.header ul.navigation li a {
+    color: #ffffff;
+    display: block;
+    font-size: 14px;
+    line-height: 16px;
+    padding: 24px 8px;
+}
+
+.header ul.navigation li a:hover {
+    background: #540000;
+    text-decoration: none;
+}
+
+.header ul.navigation li.active a {
+    background: #540000;
+}
+
+.header ul.second-nav {
+    background-color: #f7f7f7;
     height: 40px;
+    margin:0px;
     margin-left: 16px;
     margin-right: 16px;
-    position: relative;
     text-align: right;
+    position: relative;
+
+    -moz-border-radius: 0px 0px 4px 4px;
+    border-radius: 0px 0px 4px 4px;
+
+    -moz-box-shadow: 0px 1px 6px #bbbbbb;
+    -webkit-box-shadow: 0px 1px 6px #bbbbbb;
+    box-shadow: 0px 1px 6px #bbbbbb;
 }
+
+.header ul.second-nav > li {
+    background: transparent url(subnav_divider.png) no-repeat scroll right bottom;
+    display: inline-block;
+    margin-left: -4px;
+}
+
+.header ul.second-nav > li:first-child {
+    border-left: medium none;
+}
+
+.header ul.second-nav > li a,
+.header ul.second-nav > li span {
+    color: #333333;
+    display: block;
+    font-size: 12px;
+    line-height: 16px;
+    margin-left: -1px;
+    padding: 12px 8px;
+    text-decoration: none;
+}
+
+.header ul.second-nav > li.active a,
+.header ul.second-nav > li a:hover {
+    background: transparent url(subnav_active_bg.png) repeat left 1px;
+}
+
+.header ul.second-nav > li.active a {
+    color: #aa0000;
+}
+
+.header ul.breadcrumbs {
+    font-size: 12px;
+    height: 40px;
+    list-style-type: none;
+    margin-left: 32px;
+    position: absolute;
+    z-index: 1;
+}
+
+.header ul.breadcrumbs > li a:hover {
+    background: none;
+}
+
+.header ul.breadcrumbs li {
+    background: none;
+    color: black;
+    display: inline-block;
+    padding: 0px 2px;
+}
+
+.header ul.breadcrumbs li:after {
+    content: "\0020 \00BB";
+}
+
+.header ul.breadcrumbs li.last:after {
+    content: "";
+}
+
+.header ul.breadcrumbs a,
+.header ul.breadcrumbs span {
+    display: inline-block;
+    font-size: 12px;
+    line-height: 16px;
+    margin-left: -4px;
+    padding: 12px 2px;
+}
+
+.header ul.breadcrumbs a {
+    color: #aa0000;
+}
+ 
