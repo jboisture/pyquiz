@@ -2,12 +2,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" xmlns:tal="http://xml.zope.org/namespaces/tal">
 <span metal:use-macro="main.macros['master']">
 <span metal:fill-slot='content'>
-  <div id="wrap">
-
-    <div id="middle">
-      <div class="middle align-center">
-        
-        <p>${messages[0]}</p>
+<div class='page'>
+ <div class='header'>%{messages[0]}</div>
+  <div class='body'>
         <p>${messages[1]}</p>
         <p>${messages[2]}</p>
         <table border="1" width="600">
@@ -39,7 +36,7 @@
         
       </div>
     </div>
-  </div>
+
 </span>
 </span>
 </html>
