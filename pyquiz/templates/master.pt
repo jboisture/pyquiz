@@ -7,6 +7,7 @@
      <head>     
           <title>PyQuiz</title>         
           <link rel='stylesheet' href="static/style.css" type="text/css"/>  
+          <link rel='stylesheet' href='static/page.css' type='text/css'/>
           <link rel="stylesheet" href="static/deform/form.css" type="text/css" />
   <!-- JavaScript -->
   <script type="text/javascript"

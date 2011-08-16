@@ -124,6 +124,7 @@ a.modify img {
 .schooltool > .header {
     background-color: #ffffff;
     z-index: 2;
+    font:inherit;
 }
 
 .schooltool > .page {

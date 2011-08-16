@@ -2,10 +2,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" xmlns:tal="http://xml.zope.org/namespaces/tal">
 <span metal:use-macro="main.macros['master']">
 <span metal:fill-slot='content'>
-  <div id="wrap">
-
-    <div id="middle">
-      <div class="middle align-center">
+<div class='page'>
+<div class='header'>Edit Test</div>
+ <div class='body'>
         <h3>Problems</h3>
         <ul tal:repeat="question questions">
             <li><a href="${question[1]}">${question[0]}</a></li>
@@ -16,7 +15,6 @@
         <a href="/">return home</a>
       </div>
     </div>
-  </div>
 </span>
 </span>
 </html>
