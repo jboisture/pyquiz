@@ -8,41 +8,26 @@ from pyramid.url import route_url
 from pyquiz.models import DBSession, Course
 
 from pyquiz.security import USERS
+from xmlrpclib import ServerProxy
+from __init__ import trans
 
 def schooltool_login(username, password):
     """
     This method gets information from schooltool about a users courses and their role
     """
-    if username == "student":
-        user_info = {'username': 'student',
-                     'name': 'student student',
-                     'role': 'student',
-                     'courses': [('101', 'Math 101'),
-                                 ('102', 'Math 102')]}
-    if username == "teacher":
-        user_info = {'username': 'teacher',
-                     'name': 'teacher teacher',
-                     'role': 'teacher',
-                     'courses': [('101', 'Math 101'),
-                                 ('102', 'Math 102'),
-                                 ('103', 'Math 103')]}
-    if username == "teacher2":
-        user_info = {'username': 'teacher2',
-                     'name': 'test teacher2',
-                     'role': 'teacher',
-                     'courses': [('101', 'Math 101'),
-                                 ('103', 'Math 103')]}
+    server = ServerProxy("http://127.0.0.1:7080/xmlrpc", transport = trans)
+    user_info = server.get_user_info(username)
     dbsession = DBSession()
     for course in user_info['courses']:
         c = dbsession.query(Course).filter(Course.course_id == course[0]).all()
         if len(c) == 0:
-            if 'teacher' not in user_info['role']:
+            if 'teacher' not in user_info['roles']:
                  new_course = Course(course[0], course[1], '')
-            if 'teacher' in user_info['role']:
+            if 'teacher' in user_info['roles']:
                  new_course = Course(course[0], course[1], user_info['name'])
             dbsession.add(new_course)
             dbsession.flush()
-        if len(c) == 1 and user_info['role'] == 'teacher':
+        if len(c) == 1 and user_info['roles'] == 'teacher':
             if (len(c[0].instructor) != 0 and 
                           user_info['name'] not in c[0].instructor):
                 c[0].instructor += "%&"
@@ -65,10 +50,11 @@ def login(request):
     if 'form.submitted' in request.params:
         username = request.params['login']
         password = request.params['password']
-        if USERS.get(username) == password:
+        server = ServerProxy("http://127.0.0.1:7080/xmlrpc", transport = trans)
+        if server.login(username, password):
             userinfo = schooltool_login(username, password)
             request.session['user'] = userinfo
-            headers = remember(request, userinfo['role'])
+            headers = remember(request, userinfo['roles'][0])
             return HTTPFound(location='/index',
                              headers = headers)
         message = 'Failed login'

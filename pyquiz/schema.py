@@ -15,6 +15,7 @@ from colander import Range
 from deform import ValidationFailure
 from deform import Form
 from deform import widget
+from deform import FileData
 
 class EditAnswerSchema(MappingSchema):
     """
@@ -61,11 +62,22 @@ class Answers(SequenceSchema):
     """
     answers = AnswerSchema()
 
+
+class MemoryTmpStore(dict):
+    """ Instances of this class implement the
+    :class:`deform.interfaces.FileUploadTempStore` interface"""
+    def preview_url(self, uid):
+        return None
+
+tmpstore = MemoryTmpStore()
+
 class QuestionSchema(MappingSchema):
     """
     Schema that stores a single question to a test.
     """
     text = SchemaNode(String())
+    image = SchemaNode( FileData(),
+                widget=widget.FileUploadWidget(tmpstore))
     answers = Answers()
 
 class ShortAnswerQuestionSchema(MappingSchema):

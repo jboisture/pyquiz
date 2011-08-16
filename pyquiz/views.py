@@ -86,7 +86,8 @@ def view_change_dates(request):
         start_time = str(controls[2][1]).split('-')
         end_time = str(controls[3][1]).split('-')
         start_time = datetime.datetime(int(start_time[0]), int(start_time[1]),int(start_time[2]))
-        end_time = datetime.datetime(int(end_time[0]), int(end_time[1]),int(end_time[2]))
+        end_time = (datetime.datetime(int(end_time[0]), int(end_time[1]),int(end_time[2]))
+                                                 + datetime.timedelta(hours=23, minutes=59))
         test.start_time = start_time
         test.end_time = end_time
         dbsession.flush()
@@ -165,6 +166,7 @@ def view_delete_test(request):
     test_id = int(request.GET["id"])
     dbsession = DBSession()
     test = dbsession.query(Test).filter(Test.id == test_id).first()
+    course = dbsession.query(Course).filter(Course.id == test.course).first()
     post = request.POST
     if 'no' in post:
         return HTTPFound(location='/edit_test?id='+str(test.id))
@@ -185,7 +187,7 @@ def view_delete_test(request):
     message = []
     message.append("Are you sure you want to delete this test?")
     message.append("Test: " + test.name)
-    message.append("Course: " + test.course)
+    message.append("Course: " + course.course_name)
     class deleteForm(colander.Schema):
         pass
     schema = deleteForm()
@@ -500,6 +502,7 @@ def view_question(request):
                                     Question.test_id==test.id).all()
     total_questions = len(all_questions)
     for q in all_questions:
+        
         if q.question_num == question_num:
             question = q
 
@@ -665,9 +668,15 @@ def view_grade_test(request):
             user_answer=current_test[str(q_num)]
                                             #get users answer for the question
             grade = grade_question(question, dbsession, user_answer)
-            
-            takenAnswer = TakenAnswer(taken_test.id, question, user_answer, question.graded, grade[0])
-            dbsession.add(takenAnswer)
+            if type(user_answer) == type([]):
+                for answer in user_answer:
+                    takenAnswer = TakenAnswer(taken_test.id, question, answer, question.graded, grade[0])
+                    dbsession.add(takenAnswer)
+                if len(user_answer) == 0:
+                    takenAnswer = TakenAnswer(taken_test.id, question, None, question.graded, grade[0])
+            else:
+                takenAnswer = TakenAnswer(taken_test.id, question, user_answer, question.graded, grade[0])
+                dbsession.add(takenAnswer)
             dbsession.flush()
             if question.graded:
                 if grade[0]:
@@ -677,7 +686,7 @@ def view_grade_test(request):
             else:
                 taken_test.has_ungraded = True
                 dbsession.flush()
-                question_messages.append(str(q_num)+". Not Graded")
+                question_messages.append(str(q_num)+". Waiting for teacher to grade.")
         else: question_messages.append(str(q_num)+". INCORRECT")
 
     taken_test.number_graded_questions = num_graded
@@ -687,8 +696,9 @@ def view_grade_test(request):
 
     ###create a report to display the result of the test###
     if num_graded > 0:
-        message ="You got "+str(correct)+" out of "+str(num_graded)+" correct."
-        message =message +"(" + str(int(1000.0*correct/num_graded)/10.0) + "%)"
+        message ="You got "+str(correct)+" out of "+str(num_graded)+" correct"
+        message =message +"(" + str(int(1000.0*correct/num_graded)/10.0) + "%)."
+        message += " This grade only includes automaticly graded questions."
     else:
         message="There were no graded questions."
     session.pop("current_test") #remove "current_test" from sesssion

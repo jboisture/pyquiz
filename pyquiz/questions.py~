@@ -3,25 +3,13 @@ This file contains the logic responsible for parsing the form data
 and creating the test, questions and answers.
 """
 from pyquiz.models import DBSession
-from pyquiz.models import Test, Question, Answer, Course, TakenTest, TakenAnswer
+from pyquiz.models import Test, Question, Answer
 import colander
 import deform
 
 
 options = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
            'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
-
-def attempts_remaining(dbsession, test_id, username):
-    test = dbsession.query(Test).filter(Test.id == test_id).first()
-    taken_tests = dbsession.query(TakenTest).filter(
-                                  TakenTest.test_id == test_id).all()
-    taken_test = None
-    for t in taken_tests:
-        if t.username == username:
-            taken_test = t
-    if taken_test != None:
-        return (test.attempts - taken_test.attempts)
-    else: return test.attempts
 
 def grade_question(question, dbsession, user_answer):
     """
@@ -31,13 +19,12 @@ def grade_question(question, dbsession, user_answer):
     where 1 is full credit and 0 is none.
     """
     if question.question_type == "multipleChoice":
-        answer = dbsession.query(Answer).filter(
-                            Answer.id == user_answer).first() #load answers
+        answer = dbsession.query(Answer).filter(Answer.id == user_answer).first() #load answers
         if answer.correct: #check if the selected answer is correct
             return (True, 1)
     if question.question_type == "selectTrue":
         answers = dbsession.query(Answer).filter(
-                        Answer.question_id == question.id).all() #load answers
+        Answer.question_id == question.id).all() #load answers
         total_correct = 0
         user_correct = 0
         for a in answers: #find answer that user selected
@@ -51,7 +38,7 @@ def grade_question(question, dbsession, user_answer):
         answer = Answer(question.id, "username*:"+user_answer, None)
         dbsession.add(answer)
         dbsession.flush
-        return (False, 0)
+        return (True, 1)
     return (False, 0)        
 
 def create_short_answer_form(question, dbsession, user_choice):
@@ -173,12 +160,10 @@ def parse_edit_form_data(controls, dbsession, question):
     short_answer = False
     num_correct = 0
     num = 0
-    n = len(dbsession.query(Answer).filter(
-                            Answer.question_id==question.id).all())
-    answers = dbsession.query(Answer).filter(
-                            Answer.question_id==question.id).all()
+    n = len(dbsession.query(Answer).filter(Answer.question_id==question.id).all())
+    answers = dbsession.query(Answer).filter(Answer.question_id==question.id).all()
     sorted(answers, key=lambda answer: answer.id)
-    while c < len(controls):#loop used to traverse the controls creating tests,
+    while c < len(controls): #loop used to traverse the controls creating tests,
                    #questions,and answers
         if (controls[c] == ('__start__', u'answers:mapping')
                              and foundQuestion):
@@ -256,7 +241,7 @@ def parse_add_form_data(controls, dbsession, question_num, test):
     foundTest = False
     short_answer = False
     c = 0
-    while c < len(controls):#loop used to traverse the controls creating tests,
+    while c < len(controls): #loop used to traverse the controls creating tests,
                              #questions,and answers
         if controls[c] == ( "__start__", u'questions:mapping'):
             question_type = find_question_type(controls, c+1)
@@ -284,7 +269,7 @@ def parse_add_form_data(controls, dbsession, question_num, test):
 
 
 
-def parse_form_data(controls, course_id, dbsession):
+def parse_form_data(controls, dbsession):
     """
     This function parses the controls from the test creation form
     and puts the newly created test, questions, and answers into
@@ -294,19 +279,12 @@ def parse_form_data(controls, course_id, dbsession):
     foundTest = False
     c = 0
     short_answer = False
-    while c < len(controls):#loop used to traverse the controls creating tests,
+    while c < len(controls): #loop used to traverse the controls creating tests,
                    #questions,and answers
-        
-        if controls[c][0] == "name":
+        if controls[c][0] == "name" and controls[c+1][0] == "class_id":
             testname = str(controls[c][1])
-            attempts = int(controls[c+1][1])
-            start_time = str(controls[c+2][1]).split('-')
-            end_time = str(controls[c+3][1]).split('-')
-            import datetime
-            start_time = datetime.datetime(int(start_time[0]), int(start_time[1]),int(start_time[2]))
-            end_time = (datetime.datetime(int(end_time[0]), int(end_time[1]),int(end_time[2]))
-                                                               + datetime.timedelta(hours=23, minutes=59))
-            newTest = Test(testname, course_id, start_time, end_time, attempts)
+            class_id = str(controls[c+1][1])
+            newTest = Test(testname, class_id)
             dbsession.add(newTest)
             dbsession.flush()
             foundTest = True
@@ -326,12 +304,10 @@ def parse_form_data(controls, course_id, dbsession):
             if controls[c] == ('__start__',u'short_answer_questions:sequence'):
                 short_answer = True
                 question_num -= 1
-            print question_num
             if controls[c][0] == 'text' and short_answer:
                 question_num += 1
                 create_question(controls, c, "shortAnswer", 
                                 newTest.id, question_num, dbsession) 
-                question_num -= 1
             if controls[c] == ('__end__', u'short_answer_questions:sequence'):
                 short_answer = False
         c += 1

@@ -125,6 +125,7 @@ class Question(Base):
                         cascade="all, delete, delete-orphan") #establishes a 
                           #relationship between the quesiton and it's answers
     question_num = Column(Integer) #stores the questions number on the test.
+    image = Column(String)
 
     def __init__(self, graded, question_type, question, test_id, question_num):
         """init function to create a new Quesiton object"""

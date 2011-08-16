@@ -14,6 +14,9 @@ from pyramid.authorization import ACLAuthorizationPolicy
 from pyquiz.security import groupfinder
 
 import deform
+from transport import SessionTransportBase
+
+trans = SessionTransportBase()
 
 
 
