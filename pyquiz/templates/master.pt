@@ -7,18 +7,16 @@
      <head>     
           <title>PyQuiz</title>         
           <link rel='stylesheet' href="static/style.css" type="text/css"/>  
-          <link rel='stylesheet' href='static/page.css' type='text/css'/>
-          <link rel="stylesheet" href="static/deform/deform.css" type="text/css" />
-          <link rel="stylesheet" href="static/deform/theme.css" type="text/css" />
+          <link rel="stylesheet" href="static/deform/form.css" type="text/css" />
   <!-- JavaScript -->
   <script type="text/javascript"
-          src="static/deform/jquery-1.4.2.min.js"></script>
+          src="${request.static_url('pyquiz:static/deform/jquery-1.4.2.min.js')}"></script>
   <script type="text/javascript"
-          src="static/deform/jquery.form.js"></script>
+          src="${request.static_url('pyquiz:static/deform/jquery.form.js')}"></script>
   <script type="text/javascript"
-          src="static/deform/jquery.maskedinput-1.2.2.min.js"></script>
+          src="${request.static_url('pyquiz:static/deform/jquery.maskedinput-1.2.2.min.js')}"></script>
   <script type="text/javascript"
-          src="static/deform/deform.js"></script>
+          src="${request.static_url('pyquiz:static/deform/deform.js')}"></script>
    
      </head>
   <body>
