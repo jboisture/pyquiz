@@ -417,7 +417,7 @@ class ViewDeleteTest(unittest.TestCase):
         self.assertEqual("Test: Math Test", info['message'][1])
         self.assertEqual("Course: Math 101", info['message'][2])
         request = testing.DummyRequest({})
-        request.GET['id'] = 1
+        requespyramid unit testingt.GET['id'] = 1
         request.GET['no'] = 1
         info = view_delete_test(request)
         self.assertEqual("/edit_test?id=1",info.location)

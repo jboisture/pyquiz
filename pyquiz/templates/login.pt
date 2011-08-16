@@ -2,35 +2,20 @@
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
       xmlns:tal="http://xml.zope.org/namespaces/tal">
-<head>
-  <title>Login - Pyquiz</title>
-  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
-  <meta name="keywords" content="python web application" />
-  <meta name="description" content="pyramid web application" />
-  <link rel="shortcut icon" href="${request.static_url('pyquiz:static/favicon.ico')}" />
-  <h1>Welcome to Pyquiz.  Please login to take quizes.</h1>
-</head>
-<body>
-  <div id="wrap">
-    <div id="middle">
-      <div class="middle align-right">
-        <div id="left" class="app-welcome align-left">
-          <b>Login</b><br/>
-          <span tal:replace="message"/>
-        </div>
-        <div id="right" class="app-welcome align-right"></div>
-      </div>
-    </div>
-    <div id="bottom">
-      <div class="bottom">
-        <form action="${url}" method="post">
-          <input type="text" name="login" value="${login}"/><br/>
-          <input type="password" name="password"
-                 value="${password}"/><br/>
-          <input type="submit" name="form.submitted" value="Log In"/>
-        </form>
-      </div>
-    </div>
+<span metal:use-macro="main.macros['master']">
+<span metal:fill-slot='content'>
+ <div class='header'>Login</div>
+  <div class='body'>
+   <span tal:replace="message"/>
+   <div id="right" class="app-welcome align-right"></div>
+   <div class="bottom">
+    <form action="${url}" method="post">
+     <input type="text" name="login" value="${login}"/><br/>
+     <input type="password" name="password" value="${password}"/><br/>
+     <input type="submit" name="form.submitted" value="Log In"/>
+    </form>
+   </div>
   </div>
-</body>
+</span>
+</span>
 </html>

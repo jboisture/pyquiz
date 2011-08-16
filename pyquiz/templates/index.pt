@@ -1,21 +1,19 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" xmlns:tal="http://xml.zope.org/namespaces/tal">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal">
 <span metal:use-macro="main.macros['master']">
 <span metal:fill-slot='content'>
-<div class='page'>
-    <div class='header'>${messages[0]}</div>
-    <div class='body'>
-      <div class="middle align-center">
-        
-        <p>${messages[1]}</p>
-
-        <p>${messages[2]}</p>
-        <ul tal:repeat="course courses">
-            <li><a href="${course.url}">${course.course_name}</a></li>
-        </ul>
-       </div>
-      </div>
-</div>
+<div class='header'>${messages[0]}</div>
+ <div class='body'>
+  <div class="middle align-center">      
+   <p>${messages[1]}</p>
+   <p>${messages[2]}</p>
+   <ul tal:repeat="course courses">
+    <li><a href="${course.url}">${course.course_name}</a></li>
+   </ul>
+  </div>
+ </div>
 </span>
 </span>
 </html>
