@@ -4,9 +4,9 @@
       xmlns:tal="http://xml.zope.org/namespaces/tal">
 <span metal:use-macro="main.macros['master']">
 <span metal:fill-slot='content'>
+<div class='page'>
 <div class='header'>${messages[0]}</div>
  <div class='body'>
-  <div class="middle align-center">      
    <h3>Problems</h3>
         <ul tal:repeat="question questions">
             <li><a href="${question[1]}">${question[0]}</a></li>

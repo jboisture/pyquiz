@@ -2,11 +2,10 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" xmlns:tal="http://xml.zope.org/namespaces/tal">
 <span metal:use-macro="main.macros['master']">
 <span metal:fill-slot='content'>
-  <div id="wrap">
+<div class='page'>
+ <div class='header'>${message[0]}</div>
+  <div class='body'>
 
-    <div id="middle">
-      <div class="middle align-center">
-        <h1>${message[0]}</h1>
 		<h3>${message[1]}</h3>
 		<h3>${message[2]}</h3>
 		<span tal:replace="structure form"/>
@@ -17,7 +16,6 @@
 		</script>
       </div>
     </div>
-  </div>
 </span>
 </span>
 </html>

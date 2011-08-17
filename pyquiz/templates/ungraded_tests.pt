@@ -4,9 +4,9 @@
       xmlns:tal="http://xml.zope.org/namespaces/tal">
 <span metal:use-macro="main.macros['master']">
 <span metal:fill-slot='content'>
-<div class='header'>${messages[0]}</div>
- <div class='body'>
-  <div class="middle align-center">      
+<div class='page'>
+<div class='header'>Ungraded Tests</div>
+ <div class='body'>  
    <p>The following submitted tests have ungraded questsions.  
            They will be submitted to schoolTool once they have been graded
         </p>
@@ -16,6 +16,7 @@
             <li><a href="${test.url}">${test.link}</a></li>
         </ul>
   </div>
+ </div>
  </div>
 </span>
 </span>
