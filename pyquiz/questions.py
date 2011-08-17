@@ -7,6 +7,9 @@ from pyquiz.models import Test, Question, Answer, Course, TakenTest, TakenAnswer
 import colander
 import deform
 
+from xmlrpclib import ServerProxy
+from __init__ import trans, serverLocation
+
 
 options = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
            'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
@@ -302,11 +305,15 @@ def parse_form_data(controls, course_id, dbsession):
             attempts = int(controls[c+1][1])
             start_time = str(controls[c+2][1]).split('-')
             end_time = str(controls[c+3][1]).split('-')
+            test_type = str(controls[c+4][1])
             import datetime
             start_time = datetime.datetime(int(start_time[0]), int(start_time[1]),int(start_time[2]))
             end_time = (datetime.datetime(int(end_time[0]), int(end_time[1]),int(end_time[2]))
                                                                + datetime.timedelta(hours=23, minutes=59))
-            newTest = Test(testname, course_id, start_time, end_time, attempts)
+            course = dbsession.query(Course).filter(Course.id == course_id).first()
+            server = ServerProxy(serverLocation, transport = trans)
+            schooltool_id = server.add_activity(course.term_id, course.course_id, testname, test_type)
+            newTest = Test(testname, course_id, start_time, end_time, attempts, test_type, schooltool_id)
             dbsession.add(newTest)
             dbsession.flush()
             foundTest = True

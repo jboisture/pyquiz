@@ -99,15 +99,19 @@ class Test(Base):
     start_time = Column(DateTime)
     end_time = Column(DateTime)
     attempts = Column(Integer)
+    test_type = Column(String)
+    schooltool_id = Column(String)
     
-    def __init__(self, name, course, start_time, end_time, attempts):
+    def __init__(self, name, course, start_time, end_time,
+                                      attempts, test_type, schooltool_id):
         """init function to create a new Test object"""
         self.name = name
         self.course = course
         self.start_time = start_time
         self.end_time = end_time
         self.attempts = attempts
-
+        self.test_type
+        self.schooltool_id = schooltool_id
 
 class Question(Base):
     """the Question class creates the question table used to 
@@ -159,11 +163,13 @@ class Course(Base):
     """
     __tablename__ = 'courses'
     id = Column(Integer, primary_key=True)
+    term_id = Column(String)
     course_id = Column(String)
     course_name = Column(String)
     instructor = Column(String)
 
-    def __init__(self, course_id, course_name, instructor):
+    def __init__(self, term_id, course_id, course_name, instructor):
+        self.term_id = term_id
         self.course_id = course_id
         self.course_name = course_name
         self.instructor = instructor

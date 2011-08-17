@@ -24,6 +24,9 @@ from deform import widget
 
 from questions import *
 
+from xmlrpclib import ServerProxy
+from __init__ import trans, serverLocation
+
 import datetime
 
 
@@ -245,7 +248,7 @@ def view_index(request):
     courses = []
     for c in userinfo['courses']:
         course = dbsession.query(Course).filter(
-                                       Course.course_id == c[0]).first()
+                                       Course.course_id == c[1]).first()
         if course != None:
              courses.append(course)
     messages.append('')
@@ -293,6 +296,7 @@ def view_grade_question(request):
     question = dbsession.query(Question).filter(Question.id==answer.question_id).first()
     taken_test = dbsession.query(TakenTest).filter(TakenTest.id==answer.takentest_id).first()
     test = dbsession.query(Test).filter(Test.id == taken_test.test_id).first()
+    course = dbsession.query(Course).filter(Course.id == test.course).first()
     num_questions = len(dbsession.query(Question).filter(Question.test_id == test.id).all())
     post = request.POST
     if 'correct' in post or 'incorrect' in post:
@@ -309,12 +313,17 @@ def view_grade_question(request):
             taken_test.correct_graded_questions -= 1
             dbsession.flush()
         if taken_test.number_graded_questions == num_questions:
-            grade = (taken_test.correct_graded_questions, num_questions)
+            new_grade = int(((taken_test.correct_graded_questions*1.0)/ num_questions)*100)
             #submit grade to school tool
-            taken_test.has_ungraded = False
-            dbsession.flush()
+            server = ServerProxy(serverLocation, transport = trans)
+            grade = server.check_grade(course.term_id, course.course_id, 
+                              taken_test.username, test.schooltool_id)
+            if grade == None or grade < new_grade or grade == '':
+                server.submit_grade(course.term_id, course.course_id, 
+                                taken_test.username, test.schooltool_id, new_grade)
+                taken_test.has_ungraded = False
             return HTTPFound(location='/ungraded_tests?id='+str(test.id))
-        return HTTPFound(location='/grade_sumbitted_test?id='+str(taken_test.id))
+        return HTTPFound(location='/grade_submitted_test?id='+str(taken_test.id))
 
 
     messages = []
@@ -342,7 +351,7 @@ def view_grade_submitted_test(request):
     dbsession = DBSession()
     taken_test = dbsession.query(TakenTest).filter(TakenTest.id==test_id).first()
     test = dbsession.query(Test).filter(Test.id==taken_test.test_id).first()
-    if attempts_remaining(dbsession, test.id, request.session['user']['username']) <= 0:
+    if attempts_remaining(dbsession, test.id, request.session['user']['name']) <= 0:
         return HTTPFound(location='/')
     if (test.start_time - datetime.datetime.now()) > (datetime.timedelta(0)):
         return HTTPFound(location='/')
@@ -438,7 +447,7 @@ def view_course(request):
     for test in tests:
         test.url = "test?id="+str(test.id) #create url for each test to pass to
                                                #the template
-        test.attempts_remaining = attempts_remaining(dbsession, test.id, request.session['user']['username'])
+        test.attempts_remaining = attempts_remaining(dbsession, test.id, request.session['user']['name'])
     for t in tests:
         if 'url' not in dir(t):
             tests.remove(t)
@@ -492,7 +501,7 @@ def view_question(request):
     ###load the test and it's questions and their answers from the database###
     dbsession = DBSession()
     test = dbsession.query(Test).filter(Test.id==test_id).first()
-    if attempts_remaining(dbsession, test.id, request.session['user']['username']) <= 0:
+    if attempts_remaining(dbsession, test.id, request.session['user']['name']) <= 0:
         return HTTPFound(location='/')
     if (test.start_time - datetime.datetime.now()) > (datetime.timedelta(0)):
         return HTTPFound(location='/')
@@ -584,7 +593,7 @@ def view_test(request):
     all_questions = dbsession.query(Question).filter(
                                     Question.test_id==test.id).all()
     num_questions = len(all_questions)
-    if attempts_remaining(dbsession, test.id, request.session['user']['username']) <= 0:
+    if attempts_remaining(dbsession, test.id, request.session['user']['name']) <= 0:
         return HTTPFound(location='/')
     if (test.start_time - datetime.datetime.now()) > (datetime.timedelta(0)):
         return HTTPFound(location='/')
@@ -624,6 +633,7 @@ def view_grade_test(request):
     test_id = int(request.GET["id"])
     dbsession = DBSession()
     test = dbsession.query(Test).filter(Test.id==test_id).first()
+    course = dbsession.query(Course).filter(Course.id == test.course).first()
     questions = dbsession.query(Question).filter(
                                     Question.test_id==test.id).all()
     num_questions = len(questions)
@@ -639,7 +649,7 @@ def view_grade_test(request):
     taken_tests = dbsession.query(TakenTest).filter(TakenTest.test_id == test.id).all()
     attempts = 1
     for t in taken_tests:
-        if t.username == request.session['user']['username']:
+        if t.username == request.session['user']['name']:
             attempts = t.attempts + 1
             taken_test = dbsession.query(TakenTest).filter(TakenTest.id == t.id).first()
             taken_test.attempts = attempts
@@ -650,7 +660,7 @@ def view_grade_test(request):
                 dbsession.delete(answer)
                 dbsession.flush()
     if attempts == 1:
-        taken_test = TakenTest(test.id, request.session['user']['username'], 
+        taken_test = TakenTest(test.id, request.session['user']['name'], 
                                request.session['user']['name'],  num_graded,
                                correct, False, attempts)
 
@@ -692,6 +702,14 @@ def view_grade_test(request):
     taken_test.number_graded_questions = num_graded
     taken_test.correct_graded_questions = correct
     dbsession.flush()
+    if not taken_test.has_ungraded:
+        server = ServerProxy(serverLocation, transport = trans)
+        grade = server.check_grade(course.term_id, course.course_id, 
+                           request.session['user']['name'], test.schooltool_id)
+        new_grade = int(((1.0*correct)/num_graded)*100)
+        if grade == None or grade < new_grade:
+            server.submit_grade(course.term_id, course.course_id, 
+                                request.session['user']['name'], test.schooltool_id, new_grade)
 
 
     ###create a report to display the result of the test###

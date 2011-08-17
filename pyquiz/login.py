@@ -9,22 +9,24 @@ from pyquiz.models import DBSession, Course
 
 from pyquiz.security import USERS
 from xmlrpclib import ServerProxy
-from __init__ import trans
+from __init__ import trans, serverLocation
 
 def schooltool_login(username, password):
     """
     This method gets information from schooltool about a users courses and their role
     """
-    server = ServerProxy("http://127.0.0.1:7080/xmlrpc", transport = trans)
+    server = ServerProxy(serverLocation, transport = trans)
     user_info = server.get_user_info(username)
     dbsession = DBSession()
     for course in user_info['courses']:
-        c = dbsession.query(Course).filter(Course.course_id == course[0]).all()
+        c = dbsession.query(Course).filter(Course.course_id == course[1]).all()
         if len(c) == 0:
             if 'teacher' not in user_info['roles']:
-                 new_course = Course(course[0], course[1], '')
+                 new_course = Course(course[0], course[1], course[2], '')
+                 print "student"
             if 'teacher' in user_info['roles']:
-                 new_course = Course(course[0], course[1], user_info['name'])
+                 new_course = Course(course[0], course[1], course[2], user_info['name'])
+                 print "teacher"
             dbsession.add(new_course)
             dbsession.flush()
         if len(c) == 1 and user_info['roles'] == 'teacher':
@@ -50,7 +52,7 @@ def login(request):
     if 'form.submitted' in request.params:
         username = request.params['login']
         password = request.params['password']
-        server = ServerProxy("http://127.0.0.1:7080/xmlrpc", transport = trans)
+        server = ServerProxy(serverLocation, transport = trans)
         if server.login(username, password):
             userinfo = schooltool_login(username, password)
             request.session['user'] = userinfo

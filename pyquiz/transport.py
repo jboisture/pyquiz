@@ -27,7 +27,6 @@ class SessionTransportBase(Transport):
         response = h.getresponse()
         self.session = response.getheader("Set-Cookie",
                                          self.session).split(";")[0]
-        print self.session
         """if errcode != 200:
             raise ProtocolError(
                 host + handler,

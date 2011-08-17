@@ -17,6 +17,7 @@ import deform
 from transport import SessionTransportBase
 
 trans = SessionTransportBase()
+serverLocation = "http://127.0.0.1:7080/xmlrpc"
 
 
 

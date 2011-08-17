@@ -17,6 +17,7 @@ from deform import Form
 from deform import widget
 from deform import FileData
 
+
 class EditAnswerSchema(MappingSchema):
     """
     Schema that stores a single answer to a question.
@@ -76,8 +77,8 @@ class QuestionSchema(MappingSchema):
     Schema that stores a single question to a test.
     """
     text = SchemaNode(String())
-    image = SchemaNode( FileData(),
-                widget=widget.FileUploadWidget(tmpstore))
+    #image = SchemaNode( FileData(),
+    #            widget=widget.FileUploadWidget(tmpstore))
     answers = Answers()
 
 class ShortAnswerQuestionSchema(MappingSchema):
@@ -119,6 +120,12 @@ class TestSchema(Schema):
                 validator=Range(
                     min=datetime.datetime.now(),
                     min_err=('${val} is earlier than earliest date ${min}')))
+    test_type = SchemaNode(String(),
+                           widget = widget.SelectWidget(values=
+                                                (('assignment', 'Assignment'),
+                                                ('homework', 'Homework'),
+                                                ('exam', 'Exam')))
+                          )
     questions = Questions()
     short_answer_questions = ShortAnswerQuestions()
 
