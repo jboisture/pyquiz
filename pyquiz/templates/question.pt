@@ -1,21 +1,21 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml">
-
-<body id="public">
- <div class='page'>
-<div class='header'><h1>${test.name}</h1>
-    <div/>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal">
+<span metal:use-macro="main.macros['master']">
+<span metal:fill-slot='content'>
+<div class='page'>
+<div class='header'>${test.name}</div>
  <div class='body'>
-
-    <span tal:replace="structure form"/>
-    <script type="text/javascript">
-      jQuery(function() {
-         deform.load();
-         });
-    </script>
-    <a href="${link}">review test</a>
+     <span tal:replace="structure form"/>
+     <script type="text/javascript">
+       jQuery(function() {
+          deform.load();
+          });
+     </script>
+     <a href="${link}">review test</a>
   </div>
  </div>
-</body>
+</span>
+</span>
 </html>

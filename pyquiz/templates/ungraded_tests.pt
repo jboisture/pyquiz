@@ -16,8 +16,7 @@
             <li><a href="${test.url}">${test.link}</a></li>
         </ul>
   </div>
- </div>
- </div>
+</div>
 </span>
 </span>
 </html>
