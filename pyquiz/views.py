@@ -11,6 +11,7 @@ from schema import TestSchema, EditQuestionSchema
 from schema import EditShortAnswerQuestionSchema, AddQuestionsSchema
 
 from pyramid.security import authenticated_userid
+from pyramid.interfaces import IAuthenticationPolicy
 
 from colander import MappingSchema
 from colander import SchemaNode

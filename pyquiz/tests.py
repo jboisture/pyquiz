@@ -3,15 +3,16 @@ tests currently broken because there is a problem trying remaining logged in
 in the tests.
 """
 import unittest
-
 from pyramid import testing
+
 from models import Test, Question, Answer, initialize_sql
 from webob.multidict import MultiDict
+
 
 from login import *
 from testingData import *
 
-
+from pyramid.security import authenticated_userid
 
 def _initTestingDB():
     from models import DBSession
@@ -98,7 +99,7 @@ def _populateDB(session):
     session.flush()
 
 
-class ViewCeateTest(unittest.TestCase):
+class ViewCreateTest(unittest.TestCase):
 
     def setUp(self):
         self.config = testing.setUp()
@@ -112,12 +113,11 @@ class ViewCeateTest(unittest.TestCase):
     def test_view_create(self):
         from views import view_create_test
         request = testing.DummyRequest()
-        request.params['login'] = 'teacher'
-        request.params['password'] = 'password'
-        login(request)
+        self.config.testing_securitypolicy(userid='teacher', permissive=True)
+        request.session = {'user': {'username': 'teacher', 'courses': [('101', 'Math 101'), ('102', 'Math 102'), ('103', 'Math 103')], 'role': 'teacher', 'name': 'teacher teacher'}
         info = view_create_test(request)
         self.assertTrue('form' in info.keys())
-
+        
         ###Test creating a multipleChoice question with one correct answer###
         request = testing.DummyRequest(_createFormData(multipleChoiceData))
         info = view_create_test(request)
