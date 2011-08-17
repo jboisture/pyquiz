@@ -98,8 +98,8 @@ def _populateDB(session):
     session.flush()
 
 
-class ViewCeateTest(unittest.TestCase):
-
+class ViewCreateTest(unittest.TestCase):
+    
     def setUp(self):
         self.config = testing.setUp()
         self.session = _initTestingDB()
@@ -107,20 +107,22 @@ class ViewCeateTest(unittest.TestCase):
     def tearDown(self):
         testing.tearDown()
         _clearTestingDB(self.session)
-
+        
+    def _callFUT(self, formData):
+        request = testing.DummyRequest(_createFormData(formData))
+        self.config.testing_securitypolicy(userid='teacher',
+                                          permissive=True)
+        request.session = {'user': {'username': 'teacher', 'courses': [('101', 'Math 101'), ('102', 'Math 102'), ('103', 'Math 103')], 'role': 'teacher', 'name': 'teacher teacher'}}
+        request.GET['id']=1
+        from views import view_create_test
+        return view_create_test(request)
 
     def test_view_create(self):
-        from views import view_create_test
-        request = testing.DummyRequest()
-        request.params['login'] = 'teacher'
-        request.params['password'] = 'password'
-        login(request)
-        info = view_create_test(request)
+        info = self._callFUT("")
         self.assertTrue('form' in info.keys())
 
-        ###Test creating a multipleChoice question with one correct answer###
-        request = testing.DummyRequest(_createFormData(multipleChoiceData))
-        info = view_create_test(request)
+    def test_create_multipleChoice(self):   ###Test creating a multipleChoice question with one correct answer###
+        info = self._callFUT(multipleChoiceData)
         tests = self.session.query(Test).all()
         self.assertEqual(1, len(tests))
         test = tests[0]
@@ -138,9 +140,8 @@ class ViewCeateTest(unittest.TestCase):
         self.assertTrue(answers[1].correct)
         _clearTestingDB(self.session)
 
-    ###Test creating a selectTrue question with more than one correct answer###
-        request = testing.DummyRequest(_createFormData(selectTrueData))
-        info = view_create_test(request)
+    def test_create_selectTrue(self):###Test creating a selectTrue question with more than one correct answer###
+        info = self._callFUT(selectTrueData)
         tests = self.session.query(Test).all()
         self.assertEqual(1, len(tests))
         test = tests[0]
@@ -159,9 +160,8 @@ class ViewCeateTest(unittest.TestCase):
         self.assertTrue(answers[1].correct)
         _clearTestingDB(self.session)
 
-    ###Test creating a shortAnswer question with more than one correct answer##
-        request = testing.DummyRequest(_createFormData(shortAnswerData))
-        info = view_create_test(request)
+    def test_create_shortAnswer(self):###Test creating a shortAnswer question with more than one correct answer##
+        info = self._callFUT(shortAnswerData)
         tests = self.session.query(Test).all()
         self.assertEqual(1, len(tests))
         test = tests[0]
@@ -175,9 +175,8 @@ class ViewCeateTest(unittest.TestCase):
         self.assertEqual(0, len(answers))
         _clearTestingDB(self.session)
 
-        ###Test creating one of each type of question###
-        request = testing.DummyRequest(_createFormData(allTypesData))
-        info = view_create_test(request)
+    def test_create_all(self):###Test creating one of each type of question###
+        info = self._callFUT(allTypesData)
         tests = self.session.query(Test).all()
         self.assertEqual(1, len(tests))
         test = tests[0]
