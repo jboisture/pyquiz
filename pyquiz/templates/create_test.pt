@@ -23,6 +23,7 @@
   <div>
     <h1>Create a Test</h1>
     <div/>
+    <p>Test will begin at 12:01 AM on the start date and end at 11:59 PM on the ending date.</p>
     <span tal:replace="structure form"/>
     <script type="text/javascript">
       jQuery(function() {
