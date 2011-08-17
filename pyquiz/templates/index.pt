@@ -1,30 +1,21 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" xmlns:tal="http://xml.zope.org/namespaces/tal">
-<head>
-  <p align='right'>
-  <a href="/">return home</a> <a href="/logout">logout</a>
-  </p>
-  <title>Pyquiz</title>
-  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
-  <meta name="keywords" content="python web application" />
-  <meta name="description" content="pyramid web application" />
-  <link rel="shortcut icon" href="${request.static_url('pyquiz:static/favicon.ico')}" />
-  <h1>Pyquiz</h1>
-</head>
-<body>
-  <div id="wrap">
-
-    <div id="middle">
-      <div class="middle align-center">
-        <p class="app-welcome">${messages[0]}</p>
-        <p>${messages[1]}</p>
-
-        <p>${messages[2]}</p>
-        <ul tal:repeat="course courses">
-            <li><a href="${course.url}">${course.course_name}</a></li>
-        </ul>
-      </div>
-    </div>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"
+      xmlns:tal="http://xml.zope.org/namespaces/tal">
+<span metal:use-macro="main.macros['master']">
+<span metal:fill-slot='content'>
+<div class='page'>
+<div class='header'>${messages[0]}</div>
+ <div class='body'>
+  <div class="middle align-center">      
+   <p>${messages[1]}</p>
+   <p>${messages[2]}</p>
+   <ul tal:repeat="course courses">
+    <li><a href="${course.url}">${course.course_name}</a></li>
+   </ul>
   </div>
-</body>
+ </div>
+ </div>
+</span>
+</span>
 </html>

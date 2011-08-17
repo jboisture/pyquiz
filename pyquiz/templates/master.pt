@@ -1,0 +1,47 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+       <html xmlns="http://www.w3.org/1999/xhtml"
+       xmlns:tal="http://xml.zope.org/namespaces/tal"
+       xmlns:metal="http://xml.zope.org/namespaces/metal" > 
+   <span metal:define-macro="master">
+     <head>     
+          <title>PyQuiz</title>         
+          <link rel='stylesheet' href="static/style.css" type="text/css"/>  
+          <link rel='stylesheet' href='static/page.css' type='text/css'/>
+          <link rel="stylesheet" href="static/deform/form.css" type="text/css" />
+  <!-- JavaScript -->
+  <script type="text/javascript"
+          src="${request.static_url('pyquiz:static/deform/jquery-1.4.2.min.js')}"></script>
+  <script type="text/javascript"
+          src="${request.static_url('pyquiz:static/deform/jquery.form.js')}"></script>
+  <script type="text/javascript"
+          src="${request.static_url('pyquiz:static/deform/jquery.maskedinput-1.2.2.min.js')}"></script>
+  <script type="text/javascript"
+          src="${request.static_url('pyquiz:static/deform/deform.js')}"></script>
+   
+     </head>
+  <body>
+     <div class='schooltool'>
+     <div class="header">
+	  <h1 class='brand'>PyQuiz</h1>
+	   <ul class='navigation'> 
+	     <li><a href="/">return home</a></li> 
+	   </ul>
+       <ul class='second-nav'>
+         <li><a href="/logout">logout</a></li>
+       </ul>
+     </div>
+<div class='page'>
+       <span metal:define-slot="content">
+          CONTENT
+       </span>
+</div>
+     <div class='footer'>
+     <p class='server-info'>footer info. hooray.</p></div>
+    </div>
+  </body>
+   </span>
+   <script type="text/javascript">
+   deform.load()
+   </script>
+ </html>

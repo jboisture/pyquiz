@@ -29,7 +29,7 @@ def translator(term):
 def main(global_config, **settings):
     """ 
     This function returns a Pyramid WSGI application.
-    Sets up all routes connecteing views and templates.
+    Sets up all routes connecting views and templates.
     """
     engine = engine_from_config(settings, 'sqlalchemy.',poolclass=NullPool)
     initialize_sql(engine)

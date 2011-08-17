@@ -4,7 +4,7 @@ from pyramid.security import forget
 from pyramid.security import unauthenticated_userid
 from pyramid.security import authenticated_userid
 from pyramid.url import route_url
-
+from pyramid.renderers import get_renderer
 from pyquiz.models import DBSession, Course
 
 from pyquiz.security import USERS
@@ -66,6 +66,7 @@ def login(request):
         url = request.application_url + '/',
         login = login,
         password = password,
+        main = get_renderer('templates/master.pt').implementation(),
         )
     
 def logout(request):

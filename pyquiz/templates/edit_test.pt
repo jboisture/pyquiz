@@ -1,22 +1,10 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" xmlns:tal="http://xml.zope.org/namespaces/tal">
-<head>
-  <p align='right'>
-  <a href="/">return home</a> <a href="/logout">logout</a>
-  </p>
-  <title>Pyquiz</title>
-  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
-  <meta name="keywords" content="python web application" />
-  <meta name="description" content="pyramid web application" />
-  <link rel="shortcut icon" href="${request.static_url('pyquiz:static/favicon.ico')}" />
-  <h1>${test.name}</h1>
-</head>
-<body>
-  <div id="wrap">
-
-    <div id="middle">
-      <div class="middle align-center">
-
+<span metal:use-macro="main.macros['master']">
+<span metal:fill-slot='content'>
+<div class='page'>
+<div class='header'>Edit Test</div>
+ <div class='body'>
         <h3>Problems</h3>
         <ul tal:repeat="question questions">
             <li><a href="${question[1]}">${question[0]}</a></li>
@@ -27,6 +15,6 @@
         <a href="/">return home</a>
       </div>
     </div>
-  </div>
-</body>
+</span>
+</span>
 </html>
