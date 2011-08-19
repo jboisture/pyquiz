@@ -1028,6 +1028,7 @@ class ViewGradeQuestion(unittest.TestCase):
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
         request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        request.GET['id'] = 1
         from views import view_grade_question
         return view_grade_question(request)
 
@@ -1058,7 +1059,7 @@ class ViewGradeQuestion(unittest.TestCase):
     def test_grade_correct_question(self):
         dbsession = DBSession()
         _populateDB(self.session)
-        request = testing.DummyRequest({'id':1},_createFormData({'correct':True}))
+        request = testing.DummyRequest(_createFormData({'correct':True}))
         test1 = TakenTest(1, 'student', 'student', 3, 3, False,1)
         self.session.add(test1)
         self.session.flush()

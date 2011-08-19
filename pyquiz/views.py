@@ -78,7 +78,7 @@ def view_add_questions(request):
                     use_ajax=True)
     return {'form':myform.render(), 'main': main}
 
-def view_change_dates(request):
+def view_change_dates(request): #Untested
     """
     ###incomplete###
     this is the view to change the start and end dates of an existing test
