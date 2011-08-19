@@ -711,7 +711,6 @@ def view_grade_test(request):
             server.submit_grade(course.term_id, course.course_id, 
                                 request.session['user']['name'], test.schooltool_id, new_grade)
 
-
     ###create a report to display the result of the test###
     if num_graded > 0:
         message ="You got "+str(correct)+" out of "+str(num_graded)+" correct"

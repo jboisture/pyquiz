@@ -115,6 +115,7 @@ def _addCourseDB(session):
     session.add(course)
     session.flush()
 
+
 class ViewCreateTest(unittest.TestCase):
 
     def setUp(self):
@@ -465,7 +466,6 @@ class ViewEditQuestion(unittest.TestCase):
         self.assertEqual(2, questions[1].question_num)
 
 
-
 class ViewDeleteTest(unittest.TestCase):
 
     def setUp(self):
@@ -600,6 +600,7 @@ class ViewChooseTest(unittest.TestCase):
         self.assertEqual("edit_test?id=2", info['tests'][1].url)
 
 """
+
 
 class ViewIndex(unittest.TestCase):
 
@@ -779,7 +780,6 @@ class ViewQuestion(unittest.TestCase):
                         request.session['current_test']['3'])
 
 
-
 class ViewTest(unittest.TestCase):
 
     def setUp(self):
@@ -957,7 +957,6 @@ class ViewGradeTest(unittest.TestCase):
         self.assertEqual(1, len(answers))
         self.assertEqual("username*:James Boisture", answers[0].answer)
 
-        question = Question(False, "shortAnswer", "What is you're name?",1,1 )
 
         request = testing.DummyRequest({'id': 1})
         request.session["current_test"] = {'name':'Math Test',
@@ -971,6 +970,34 @@ class ViewGradeTest(unittest.TestCase):
         self.assertEqual('1. Correct', info['questions'][0])
         self.assertEqual('2. INCORRECT', info['questions'][1])
         self.assertEqual('3. Waiting for teacher to grade.', info['questions'][2])
+        
+        request = testing.DummyRequest({'id': 1})
+        request.session["current_test"] = {'name':'Math Test',
+                                           '1': '2',
+                                           '2':[],
+                                           '3':'James Boisture'}
+    def test_has_been_graded(self):
+        _populateDB(self.session)
+        dbsession = DBSession()
+        test = Test("Test Test", 1,datetime.date.today(),datetime.date.today()+datetime.timedelta(days=2),5000,'assignment',1)
+        self.session.add(test)
+        self.session.flush()
+        question = Question(True, "multipleChoice", "1+1 = ?", test.id, 3)
+        self.session.add(question)
+        self.session.flush()
+        answer = Answer(question.id, "2", True)
+        self.session.add(answer)
+        self.session.flush()
+        takentest = TakenTest(1, 'teacher', 'teacher', 3, 3, False,1)
+        self.session.add(takentest)
+        self.session.flush()
+        takenanswer = TakenAnswer(1, question, '2', True, True)
+        self.session.add(takenanswer)
+        self.session.flush()
+        request = testing.DummyRequest({'id': 1})
+        request.session["current_test"] = {'name':'Test Test',
+                                           '1': '2'}
+        info = self._callFUT(request)
 
 class ViewUngradedTests(unittest.TestCase):
     def setUp(self):
@@ -1013,7 +1040,6 @@ class ViewUngradedTests(unittest.TestCase):
         request.session['current_test']="I am a test"
         info = self._callFUT(request)
         self.assertTrue("current_test" not in request.session)
-
 
 
 class ViewGradeQuestion(unittest.TestCase):
@@ -1091,7 +1117,6 @@ class ViewGradeQuestion(unittest.TestCase):
         self.assertTrue(type(info), type(HTTPFound()))
         self.assertEqual(test1.correct_graded_questions,0)
         
-
 
 class ViewGradeSubmittedTest(unittest.TestCase):
     def setUp(self):
@@ -1212,7 +1237,6 @@ class ViewGradeSubmittedTest(unittest.TestCase):
         self.assertEqual(info['answers'][0].html, '<p>3. Graded: Incorrect</p>')
         
         
-        
 class ViewCourseTeacher(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
@@ -1269,7 +1293,8 @@ class ViewCourseTeacher(unittest.TestCase):
         from views import view_course_teacher
         info = view_course_teacher(request)
         self.assertTrue('current_test' not in request.session)
-        
+  
+  
 class ViewCourse(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
