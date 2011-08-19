@@ -293,7 +293,7 @@ def view_ungraded_tests(request):
 
 def view_grade_question(request):
     """
-    This view lets a teacher grade aquestion thatcan not be graded automatically
+    This view lets a teacher grade a question that can not be graded automatically
     """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')  
