@@ -106,7 +106,7 @@ def _populateDB(session):
                         test.id, 3)
     session.add(question)
     session.flush()
-    course = Course(1,1,"Math 101", "teacher")
+    course = Course(1,1,"Math 101", "teacher'%&teacherII")
     session.add(course)
     session.flush()
 
@@ -638,7 +638,7 @@ class ViewIndex(unittest.TestCase):
         self.assertEqual("Math 101", info['courses'][0].course_name)
         self.assertEqual("1", info['courses'][0].course_id)
         self.assertEqual("1", info['courses'][0].term_id)
-        self.assertEqual("teacher", info['courses'][0].instructor)
+        self.assertEqual("teacher'%&teacherII", info['courses'][0].instructor)
 
     def test_view_as_student(self):
         self.config.testing_securitypolicy(userid='student',permissive=True)
@@ -652,7 +652,7 @@ class ViewIndex(unittest.TestCase):
         self.assertEqual("Math 101", info['courses'][0].course_name)
         self.assertEqual("1", info['courses'][0].course_id)
         self.assertEqual("1", info['courses'][0].term_id)
-        self.assertEqual("teacher", info['courses'][0].instructor)
+        self.assertEqual("teacher'%&teacherII", info['courses'][0].instructor)
 
 
 class ViewQuestion(unittest.TestCase):
@@ -1014,6 +1014,8 @@ class ViewUngradedTests(unittest.TestCase):
         info = self._callFUT(request)
         self.assertTrue("current_test" not in request.session)
 
+
+
 class ViewGradeQuestion(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
@@ -1043,7 +1045,7 @@ class ViewGradeQuestion(unittest.TestCase):
         dbsession = DBSession()
         _populateDB(self.session)
         request = testing.DummyRequest({'id':1})
-        test1 = TakenTest(1, 'student', 'student', 3, 3, False,1)
+        test1 = TakenTest(1, 'student', 'student', 2, 2, False,1)
         self.session.add(test1)
         self.session.flush()
         question1 = dbsession.query(Question).first()
@@ -1059,17 +1061,273 @@ class ViewGradeQuestion(unittest.TestCase):
     def test_grade_correct_question(self):
         dbsession = DBSession()
         _populateDB(self.session)
-        request = testing.DummyRequest(_createFormData({'correct':True}))
-        test1 = TakenTest(1, 'student', 'student', 3, 3, False,1)
+        request = testing.DummyRequest({'id':1})
+        request.POST = {'correct':True}
+        test1 = TakenTest(1, 'student', 'student', 2, 2, False,1)
         self.session.add(test1)
         self.session.flush()
+        question1 = dbsession.query(Question).first()
+        takenquestion = TakenAnswer(1, question1, '3', False, False)
+        self.session.add(takenquestion)
+        self.session.flush()
+        info = self._callFUT(request)
+        self.assertTrue(type(info), type(HTTPFound()))
+        self.assertEqual(test1.correct_graded_questions,3)
+        
+    def test_grade_incorrect_question(self):
+        dbsession = DBSession()
+        _populateDB(self.session)
+        request = testing.DummyRequest({'id':1})
+        request.POST = {'incorrect':True}
+        test1 = TakenTest(1, 'student', 'student', 1, 1, False,1)
+        self.session.add(test1)
+        self.session.flush()
+        question1 = dbsession.query(Question).first()
+        takenquestion = TakenAnswer(1, question1, '2', True, True)
+        self.session.add(takenquestion)
+        self.session.flush()
+        request.session['current_test']="I am a test"
+        info = self._callFUT(request)
+        self.assertTrue(type(info), type(HTTPFound()))
+        self.assertEqual(test1.correct_graded_questions,0)
+        
+
+
+class ViewGradeSubmittedTest(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+        self.session = _initTestingDB()
+
+    def tearDown(self):
+        testing.tearDown()
+        _clearTestingDB(self.session)
+
+    def _callFUT(self, request):
+        _populateDB(self.session)
+        self.config.testing_securitypolicy(userid='teacher',
+                                          permissive=True)
+        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        from views import view_grade_submitted_test
+        return view_grade_submitted_test(request)
+
+    def test_permission_denied(self):
+        request = testing.DummyRequest()
+        self.config.testing_securitypolicy(userid='student',permissive=True)
+        from views import view_grade_submitted_test
+        info = view_grade_submitted_test(request)
+        self.assertEqual(type(info),type(HTTPFound(location='/')))
+    
+    def test_too_early(self):
+        _populateDB(self.session)
+        test1 = Test("TooEarlyTest", 1, datetime.datetime.now()+datetime.timedelta(days=20), 
+                                      datetime.datetime.now()+datetime.timedelta(days=19),
+                                      5000, "assignment", 1)
+        self.session.add(test1)
+        self.session.flush()
+        takentest1 = TakenTest(3, 'student', 'student', 2, 2, False,1)
+        self.session.add(takentest1)
+        self.session.flush()
+        request = testing.DummyRequest()
+        request.GET["id"]=1
+        request.session['current_test']="I am a test"
+        info = self._callFUT(request)
+        self.assertEqual(type(info),type(HTTPFound(location='/')))
+
+    def test_too_late(self):
+        _populateDB(self.session)
+        test1 = Test("TooEarlyTest", 1, datetime.datetime.now()-datetime.timedelta(days=20), 
+                                      datetime.datetime.now()-datetime.timedelta(days=19),
+                                      5000, "assignment", 1)
+        self.session.add(test1)
+        self.session.flush()
+        takentest1 = TakenTest(3, 'student', 'student', 2, 2, False,1)
+        self.session.add(takentest1)
+        self.session.flush()
+        request = testing.DummyRequest()
+        request.GET["id"]=1
+        info = self._callFUT(request)
+        self.assertEqual(type(info),type(HTTPFound(location='/')))
+        
+    def test_no_attempts(self):
+        _populateDB(self.session)
+        test1 = Test("TooEarlyTest", 1, datetime.datetime.now(), 
+                                      datetime.datetime.now()+datetime.timedelta(days=1),
+                                      0, "assignment", 1)
+        self.session.add(test1)
+        self.session.flush()
+        takentest1 = TakenTest(3, 'student', 'student', 2, 2, False,1)
+        self.session.add(takentest1)
+        self.session.flush()
+        request = testing.DummyRequest()
+        request.GET["id"]=1
+        info = self._callFUT(request)
+        self.assertEqual(type(info),type(HTTPFound(location='/')))
+    
+    def test_view_grade_submitted_test_ungraded_question(self):
+        _populateDB(self.session)
+        dbsession = DBSession()
         question1 = dbsession.query(Question).first()
         takenquestion = TakenAnswer(1, question1, '2', False, False)
         self.session.add(takenquestion)
         self.session.flush()
+        request = testing.DummyRequest()
+        request.GET['id'] = 1
+        takentest1 = TakenTest(1, 'student', 'student', 2, 2, False,1)
+        self.session.add(takentest1)
+        self.session.flush()
         info = self._callFUT(request)
-        print info
+        self.assertEqual(info['messages'][0], 'Test Name: Math Test')
+        self.assertEqual(info['answers'][0].html, '<a href="grade_question?id=1">1. Not Graded</a>')
+        
+    def test_view_grade_submitted_test_graded_correct(self):
+        _populateDB(self.session)
+        dbsession = DBSession()
+        question1 = dbsession.query(Question).filter(Question.id==2).first()
+        takenquestion = TakenAnswer(1, question1, '2', True, True)
+        self.session.add(takenquestion)
+        self.session.flush()
+        request = testing.DummyRequest()
+        request.GET['id'] = 1
+        takentest1 = TakenTest(1, 'student', 'student', 2, 2, False,1)
+        self.session.add(takentest1)
+        self.session.flush()
+        info = self._callFUT(request)
+        self.assertEqual(info['messages'][0], 'Test Name: Math Test')
+        self.assertEqual(info['answers'][0].html, '<p>2. Graded: Correct</p>')
+        
+    def test_view_grade_submitted_test_graded_incorrect(self):
+        _populateDB(self.session)
+        dbsession = DBSession()
+        question1 = dbsession.query(Question).filter(Question.id==3).first()
+        takenquestion = TakenAnswer(1, question1, '1', True, False)
+        self.session.add(takenquestion)
+        self.session.flush()
+        request = testing.DummyRequest()
+        request.GET['id'] = 1
+        takentest1 = TakenTest(1, 'student', 'student', 2, 2, False,1)
+        self.session.add(takentest1)
+        self.session.flush()
+        info = self._callFUT(request)
+        self.assertEqual(info['messages'][0], 'Test Name: Math Test')
+        self.assertEqual(info['answers'][0].html, '<p>3. Graded: Incorrect</p>')
         
         
+        
+class ViewCourseTeacher(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+        self.session = _initTestingDB()
+
+    def tearDown(self):
+        testing.tearDown()
+        _clearTestingDB(self.session)
+
+    def _callFUT(self, request):
+        _populateDB(self.session)
+        self.config.testing_securitypolicy(userid='teacher',
+                                          permissive=True)
+        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        from views import view_course_teacher
+        return view_course_teacher(request)
+
+    def test_permission_denied(self):
+        request = testing.DummyRequest({'id':1})
+        self.config.testing_securitypolicy(userid='student',permissive=True)
+        from views import view_course_teacher
+        info = view_course_teacher(request)
+        self.assertEqual(type(info),type(HTTPFound(location='/'))) 
+        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
+        request.GET['id'] = 1
+        info = view_course_teacher(request)
+        self.assertEqual(type(info),type(HTTPFound(location='/')))
+    
+    def test_view_course_teacher(self):
+        oldtest = Test("OldTest", 1, datetime.datetime.now()-datetime.timedelta(days=20), 
+                                      datetime.datetime.now()-datetime.timedelta(days=19),
+                                      5000, "assignment", 1)
+        self.session.add(oldtest)
+        self.session.flush()
+        futuretest = Test("FutureTest", 1, datetime.datetime.now()+datetime.timedelta(days=20), 
+                                      datetime.datetime.now()+datetime.timedelta(days=19),
+                                      5000, "assignment", 1)
+        self.session.add(futuretest)
+        self.session.flush()
+        takentest1 = TakenTest(1, 'student', 'student', 2, 2, True,1)
+        self.session.add(takentest1)
+        self.session.flush()
+        request = testing.DummyRequest({'id':1})
+        request.session['current_test']="I am a test"
+        info = self._callFUT(request)
+        self.assertTrue('current_test' not in request.session)
+        
+    def test_view_course_teacher_no_tests(self):
+        request = testing.DummyRequest({'id':1})
+        request.session['current_test']="I am a test"
+        self.config.testing_securitypolicy(userid='teacher',
+                                          permissive=True)
+        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        from views import view_course_teacher
+        info = view_course_teacher(request)
+        self.assertTrue('current_test' not in request.session)
+        
+class ViewCourse(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+        self.session = _initTestingDB()
+
+    def tearDown(self):
+        testing.tearDown()
+        _clearTestingDB(self.session)
+
+    def _callFUTTeacher(self, request):
+        _populateDB(self.session)
+        self.config.testing_securitypolicy(userid='teacher',
+                                          permissive=True)
+        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        from views import view_course
+        return view_course(request)
+
+    def _callFUTStudent(self,request):
+        _populateDB(self.session)
+        self.config.testing_securitypolicy(userid='student',
+                                           permissive=True)        
+        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}})
+        from views import view_course
+        return view_course(request) 
+        
+    def test_permission_denied(self):
+        request = testing.DummyRequest({'id':1})
+        self.config.testing_securitypolicy(userid='student',permissive=True)
+        from views import view_course
+        info = view_course(request)
+        self.assertEqual(type(info),type(HTTPFound(location='/'))) 
+        
+    def test_view_course_as_teacher(self):
+        request = testing.DummyRequest({'id':1})
+        info = self._callFUTTeacher(request)
+        
+    def test_view_course_as_student(self):
+        oldtest = Test("OldTest", 1, datetime.datetime.now()-datetime.timedelta(days=20), 
+                                      datetime.datetime.now()-datetime.timedelta(days=19),
+                                      5000, "assignment", 1)
+        self.session.add(oldtest)
+        self.session.flush()
+        nowtest = Test("NowTest", 1, datetime.datetime.now()-datetime.timedelta(days=1), 
+                                      datetime.datetime.now()+datetime.timedelta(days=1),
+                                      0, "assignment", 1)
+        self.session.add(nowtest)
+        self.session.flush()
+        futuretest = Test("FutureTest", 1, datetime.datetime.now()+datetime.timedelta(days=20), 
+                                      datetime.datetime.now()+datetime.timedelta(days=19),
+                                      5000, "assignment", 1)
+        self.session.add(futuretest)
+        self.session.flush()
+        request = testing.DummyRequest({'id':1})
+        request.session['current_test']="I am a test"
+        info = self._callFUTStudent(request)
+        self.assertEqual(len(info['current_tests']), 2)
+        self.assertEqual(len(info['old_tests']), 2)
+        self.assertEqual(len(info['upcoming_tests']), 1)
+        self.assertEqual(info['messages'],[u'Course: Math 101', u"Instructor(s): teacher', teacherII", 'There are 5 tests to take:'])
         
         

@@ -117,7 +117,6 @@ def view_change_dates(request): #Untested
     appstruct = {'start_date':test.start_time, 'end_date':test.end_time}
     return {'form':myform.render(appstruct), 'main': main}
     
-
 def view_edit_question(request):
     """
     this view allows a teacher to edit an existing question in an existing test
@@ -203,7 +202,6 @@ def view_delete_test(request):
     form = deform.Form(schema, buttons=('yes','no'))
     return {'form':form.render(), 'message':message, 'main': main}
     
-
 def view_edit_test(request):
     """
     This view allows a teacher to edit an existing test
@@ -235,7 +233,6 @@ def view_edit_test(request):
             'delete_link':delete_link,'add_link':add_link,
             "change_dates_link":change_dates_link, 'main': main}
 
-
 def view_index(request):
     """
     View associated with the home page of the app.
@@ -265,7 +262,6 @@ def view_index(request):
     for course in courses:
         course.url = 'course?id='+str(course.id)
     return {'messages': messages, 'courses': courses, 'main': main}
-
 
 def view_ungraded_tests(request):
     """
@@ -346,8 +342,6 @@ def view_grade_question(request):
     form = deform.Form(schema, buttons=('correct','incorrect'))
     return {"message": messages, "form": form.render(), 'main': main}
     
-
-
 def view_grade_submitted_test(request):
     """
     This view lets a teacher view information on a test that a student has submitted and
@@ -377,7 +371,8 @@ def view_grade_submitted_test(request):
             answer.html = u'<p>'+str(answer.question_num)+u'. Graded: '
             if answer.correct:
                 answer.html += u'Correct</p>'
-            else: answer.html += u'Incorrect</p>'
+            else:
+                answer.html += u'Incorrect</p>'
         else:
             answer.html = u'<a href="grade_question?id='+str(answer.id)+u'">'+str(answer.question_num)
             answer.html += u'. Not Graded</a>'
@@ -398,7 +393,8 @@ def view_course_teacher(request):
         taken_tests = dbsession.query(TakenTest).filter(TakenTest.test_id == test.id).all()
         ungraded = False
         for taken_test in taken_tests:
-            if taken_test.has_ungraded: ungraded = True
+            if taken_test.has_ungraded:
+                ungraded = True
         test.url = "ungraded_tests?id="+str(test.id)
         if ungraded:
             taken_tests = dbsession.query(TakenTest).filter(TakenTest.test_id == test.id).all()
@@ -409,9 +405,9 @@ def view_course_teacher(request):
             test.ungraded_tests = ungraded_tests
         else:
             test.ungraded_tests = 0
-    for t in tests:
-        if 'url' not in dir(t):
-            tests.remove(t)
+    #for t in tests:
+        #if 'url' not in dir(t):
+            #tests.remove(t) #this can never happen - see line 400.  Tests, therefore, are incapable of covering it
     old_tests = []
     current_tests = []
     upcoming_tests = []
@@ -438,8 +434,6 @@ def view_course_teacher(request):
     return {'old_tests':old_tests, 'current_tests':current_tests,'upcoming_tests':upcoming_tests,
             'messages':messages, 'link':link, 'main': main}
 
-
-
 def view_course(request):
     """
     This view lets a student or a teacher view a course.  To a student it will let them
@@ -461,9 +455,9 @@ def view_course(request):
         test.url = "test?id="+str(test.id) #create url for each test to pass to
                                                #the template
         test.attempts_remaining = attempts_remaining(dbsession, test.id, request.session['user']['name'])
-    for t in tests:
-        if 'url' not in dir(t):
-            tests.remove(t)
+    #for t in tests:
+        #if 'url' not in dir(t): ## THIS LINE IS TAUTOLOGICALLY IMPROBABLE. REPAIR!
+            #tests.remove(t)
     old_tests = []
     current_tests = []
     upcoming_tests = []
@@ -487,15 +481,8 @@ def view_course(request):
         i += 1
     messages.append(m)
     messages.append('There are '+str(len(tests))+' tests to take:')
-    if authenticated_userid(request) == 'teacher':
-        if len(tests) > 0:
-            messages.append('There are ungraded tests in the following tests.')
-        else: messages.append('There are no tests to grade.')
     return {'old_tests':old_tests, 'current_tests':current_tests,
             'upcoming_tests':upcoming_tests, 'messages':messages, 'main': main}
-
-
-
 
 def view_question(request):
     """
@@ -576,9 +563,8 @@ def view_question(request):
         schema = create_select_all_form(question,
                                        dbsession, user_choice)
     if question.question_type == "shortAnswer":
-        schema = create_short_answer_form(question, dbsession, user_choice)
-
-
+        schema = create_short_answer_form(question, 
+                                        dbsession, user_choice)
     if question_num == total_questions: #check if this is the last question
         form = deform.Form(schema[0],
                            buttons=('review test',))
@@ -589,8 +575,6 @@ def view_question(request):
         return {"test":test,'form':form.render(schema[1]),
                 'link':'/test?id='+str(test.id), 'main': main} #if it's a short answer question (returns default value)
     return {"test":test,'form':form.render(), 'link':'/test?id='+str(test.id), 'main': main}
-
-    
 
 def view_test(request):
     """
