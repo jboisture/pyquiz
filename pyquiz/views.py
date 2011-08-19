@@ -42,7 +42,6 @@ def view_create_test(request):
     main = get_renderer('templates/master.pt').implementation()
 
     course_id = int(request.GET["id"])
-
     schema = TestSchema()
     myform = Form(schema, buttons=('submit',), 
                   use_ajax=True)  #create the form for the page
@@ -244,8 +243,7 @@ def view_index(request):
     main = get_renderer('templates/master.pt').implementation()
     if authenticated_userid(request) == None or 'user' not in request.session.keys():
         return HTTPFound(location='/')
-    main = get_renderer('templates/master.pt').implementation()
-    if 'current_test' in request.session.keys(): 
+    if 'current_test' in request.session.keys():
         request.session.pop('current_test') #remove current_test from session
     userinfo = request.session['user']
     messages = []
@@ -262,8 +260,8 @@ def view_index(request):
         if course != None:
              courses.append(course)
     messages.append('')
-    if len(courses) == 0:
-        messages[2] == 'You have no classes'
+#    if len(courses) == 0:
+#        messages[2] == 'You have no classes' ##Depreceated? 
     for course in courses:
         course.url = 'course?id='+str(course.id)
     return {'messages': messages, 'courses': courses, 'main': main}
@@ -518,11 +516,11 @@ def view_question(request):
     dbsession = DBSession()
     test = dbsession.query(Test).filter(Test.id==test_id).first()
     if attempts_remaining(dbsession, test.id, request.session['user']['name']) <= 0:
-        return HTTPFound(location='/')
+        return HTTPFound(location='/') #if no more attempts left
     if (test.start_time - datetime.datetime.now()) > (datetime.timedelta(0)):
-        return HTTPFound(location='/')
+        return HTTPFound(location='/') #if it's too early to take
     if (test.end_time - datetime.datetime.now()) < (datetime.timedelta(0)):
-        return HTTPFound(location='/')
+        return HTTPFound(location='/') #if it's too late to take
     all_questions = dbsession.query(Question).filter(
                                     Question.test_id==test.id).all()
     total_questions = len(all_questions)
@@ -589,7 +587,7 @@ def view_question(request):
                            buttons=('next question',))
     if question.question_type == "shortAnswer":
         return {"test":test,'form':form.render(schema[1]),
-                'link':'/test?id='+str(test.id), 'main': main}
+                'link':'/test?id='+str(test.id), 'main': main} #if it's a short answer question (returns default value)
     return {"test":test,'form':form.render(), 'link':'/test?id='+str(test.id), 'main': main}
 
     

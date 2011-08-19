@@ -333,7 +333,6 @@ def parse_form_data(controls, course_id, dbsession):
             if controls[c] == ('__start__',u'short_answer_questions:sequence'):
                 short_answer = True
                 question_num -= 1
-            print question_num
             if controls[c][0] == 'text' and short_answer:
                 question_num += 1
                 create_question(controls, c, "shortAnswer", 
