@@ -4,7 +4,7 @@ tests are currently FIXED.
 import unittest
 from pyramid import testing
 
-from models import Test, Course, Question, Answer, initialize_sql
+from models import TakenTest, Test, Course, Question, TakenAnswer, Answer, initialize_sql
 from webob.multidict import MultiDict
 
 from pyramid.httpexceptions import HTTPFound
@@ -23,7 +23,7 @@ def _initTestingDB():
     return initialize_sql(engine)
 
 def _clearTestingDB(session):
-    from models import Test, Question, Answer
+    from models import TakenTest, Course, Test, Question, Answer
     tests = session.query(Test).all()
     for test in tests:
         session.delete(test)
@@ -36,6 +36,14 @@ def _clearTestingDB(session):
     for question in questions:
         session.delete(question)
         session.flush()
+    takentests = session.query(TakenTest).all()
+    for takentest in takentests:
+        session.delete(takentest)
+        session.flush()
+    takenanswers = session.query(TakenAnswer).all()
+    for takenanswer in takenanswers:
+        session.delete(takenanswer)
+        session.flush()
 
 def _createFormData(data):
     POST = MultiDict()
@@ -44,10 +52,10 @@ def _createFormData(data):
     return POST
 
 def _populateDB(session):
-    test = Test("Math Test", 1,datetime.date.today(),datetime.date.today()+datetime.timedelta(days=3),5000,'assignment',1)
+    test = Test("Math Test", 1,datetime.date.today(),datetime.date.today()+datetime.timedelta(days=2),5000,'assignment',1)
     session.add(test)
     session.flush()
-    test2 = Test("Math Test 2", 1,datetime.date.today(),datetime.date.today() + datetime.timedelta(days=1),5000,'assignment',2)
+    test2 = Test("Math Test 2", 1,datetime.date.today(),datetime.date.today() + datetime.timedelta(days=2),5000,'assignment',2)
     session.add(test2)
     session.flush()
     question = Question(True, "multipleChoice", "1+1 = ?", test.id, 1)
@@ -92,16 +100,16 @@ def _populateDB(session):
     answer = Answer(question.id, "5", False)
     session.add(answer)
     session.flush()
-    question = Question(False, 
+    question = Question(False,
                         "shortAnswer",
-                        "What is you're name?", 
+                        "What is you're name?",
                         test.id, 3)
     session.add(question)
     session.flush()
     course = Course(1,1,"Math 101", "teacher")
     session.add(course)
     session.flush()
-    
+
 def _addCourseDB(session):
     course = Course(1,1,"Math 101", "teacher")
     session.add(course)
@@ -116,7 +124,7 @@ class ViewCreateTest(unittest.TestCase):
     def tearDown(self):
         testing.tearDown()
         _clearTestingDB(self.session)
-        
+
     def _callFUT(self, formData):
         _addCourseDB(self.session)
         request = testing.DummyRequest(_createFormData(formData))
@@ -130,19 +138,19 @@ class ViewCreateTest(unittest.TestCase):
     def test_view_create(self):
         info = self._callFUT("")
         self.assertTrue('form' in info.keys())
-    
+
     def test_permission_denied(self):
         request = testing.DummyRequest()
         self.config.testing_securitypolicy(userid='student',permissive=False)
         from views import view_create_test
         info = view_create_test(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}     
+        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
         request.GET['id'] = 1
         info = view_create_test(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-   
-    
+
+
     def test_create_multipleChoice(self):   ###Test creating a multipleChoice question with one correct answer###
         info = self._callFUT(multipleChoiceData)
         tests = self.session.query(Test).all()
@@ -241,7 +249,7 @@ class ViewCreateTest(unittest.TestCase):
         self.assertEqual(0, len(answers))
         self.assertEqual(u'1',test.course)
         _clearTestingDB(self.session)
-        
+
 
 class ViewAddQuestions(unittest.TestCase):
 
@@ -262,22 +270,22 @@ class ViewAddQuestions(unittest.TestCase):
         request.GET['id']=1
         from views import view_add_questions
         return view_add_questions(request)
-    
+
     def test_permission_denied(self):
         request = testing.DummyRequest()
         self.config.testing_securitypolicy(userid='student',permissive=False)
         from views import view_add_questions
         info = view_add_questions(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}     
+        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
         request.GET['id'] = 1
         info = view_add_questions(request)
-        self.assertEqual(type(info),type(HTTPFound(location='/')))        
-   
+        self.assertEqual(type(info),type(HTTPFound(location='/')))
+
     def test_view_add_questions(self):
         info = self._callFUT("")
         self.assertTrue("form" in info.keys())
-        
+
     def test_add_questions(self):
         info = self._callFUT(addQuestionsData)
         questions = self.session.query(Question).filter(
@@ -314,7 +322,7 @@ class ViewAddQuestions(unittest.TestCase):
         answers = self.session.query(Answer).filter(
                                     Answer.question_id==questions[5].id).all()
         self.assertEqual(0, len(answers))
-        
+
 
 class ViewEditQuestion(unittest.TestCase):
 
@@ -340,13 +348,13 @@ class ViewEditQuestion(unittest.TestCase):
         from views import view_edit_question
         info = view_edit_question(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}     
+        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
         request.GET['id'] = 1
         info = view_edit_question(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
         self.assertEqual(info.location,'/')
-        
-   
+
+
     def test_view_edit_question(self):
 
         ###test editing multiple choice questions###
@@ -456,8 +464,8 @@ class ViewEditQuestion(unittest.TestCase):
         self.assertEqual(1, questions[0].question_num)
         self.assertEqual(2, questions[1].question_num)
 
-        
-    
+
+
 class ViewDeleteTest(unittest.TestCase):
 
     def setUp(self):
@@ -475,24 +483,24 @@ class ViewDeleteTest(unittest.TestCase):
         request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         from views import view_delete_test
         return view_delete_test(request)
-        
+
     def test_permission_denied(self):
         request = testing.DummyRequest()
         self.config.testing_securitypolicy(userid='student',permissive=False)
         from views import view_delete_test
         info = view_delete_test(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}     
+        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
         request.GET['id'] = 1
         info = view_delete_test(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-   
+
     def test_view_delete_test(self):
         request = testing.DummyRequest({})
         request.GET['id'] = 1
         info = self._callFUT(request)
         self.assertTrue('form' in info)
-        self.assertEqual("Are you sure you want to delete this test?", 
+        self.assertEqual("Are you sure you want to delete this test?",
                          info['message'][0])
         self.assertEqual("Test: Math Test", info['message'][1])
         self.assertEqual("Course: Math 101", info['message'][2])
@@ -533,18 +541,18 @@ class ViewEditTest(unittest.TestCase):
         request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         from views import view_edit_test
         return view_edit_test(request)
-        
+
     def test_permission_denied(self):
         request = testing.DummyRequest()
         self.config.testing_securitypolicy(userid='student',permissive=False)
         from views import view_edit_test
         info = view_edit_test(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}     
-        request.GET['id'] = 1  
+        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
+        request.GET['id'] = 1
         info = view_edit_test(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-   
+
 
     def test_view_edit_test(self):
         request = testing.DummyRequest({})
@@ -560,7 +568,7 @@ class ViewEditTest(unittest.TestCase):
                         info['questions'][1][1])
         self.assertEqual('question 3', info['questions'][2][0])
         self.assertEqual("/edit_question?id=1;question=3",
-                        info['questions'][2][1])        
+                        info['questions'][2][1])
         self.assertEqual("/delete_test?id=1",info['delete_link'])
         self.assertEqual("/add_questions?id=1",info['add_link'])
 """
@@ -573,7 +581,7 @@ class ViewChooseTest(unittest.TestCase):
     def tearDown(self):
         testing.tearDown()
         _clearTestingDB(self.session)
- 
+
     def _callFUT(self, request):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
@@ -610,14 +618,14 @@ class ViewIndex(unittest.TestCase):
         request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
         from views import view_index
         return view_index(request)
-        
+
     def test_permission_denied(self):
         request = testing.DummyRequest()
         self.config.testing_securitypolicy(userid='student',permissive=False)
         from views import view_index
         info = view_index(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-  
+
     def test_view_index(self):
         request = testing.DummyRequest()
         request.session['current_test'] = {}
@@ -631,13 +639,13 @@ class ViewIndex(unittest.TestCase):
         self.assertEqual("1", info['courses'][0].course_id)
         self.assertEqual("1", info['courses'][0].term_id)
         self.assertEqual("teacher", info['courses'][0].instructor)
-    
+
     def test_view_as_student(self):
         self.config.testing_securitypolicy(userid='student',permissive=True)
         request = testing.DummyRequest()
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}     
+        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
         request.GET['id'] = 1
-        from views import view_index   
+        from views import view_index
         info = view_index(request)
         self.assertEqual(info['messages'], ['Welcome student to pyquiz.', 'You are currently enrolled in the following classes:', ''])
         self.assertEqual(1, len(info['courses']))
@@ -671,7 +679,7 @@ class ViewQuestion(unittest.TestCase):
         from views import view_question
         info = view_question(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        
+
     def test_too_early(self):
         request = testing.DummyRequest(_createFormData(tooEarlyData))
         request.GET["id"]=1
@@ -685,7 +693,7 @@ class ViewQuestion(unittest.TestCase):
                                         'question': 1})
         info = self._callFUT(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-       
+
     def test_too_late(self):
         request = testing.DummyRequest(_createFormData(tooLateData))
         request.GET["id"]=1
@@ -694,13 +702,13 @@ class ViewQuestion(unittest.TestCase):
                                           permissive=True)
         request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         from views import view_create_test
-        
+
         view_create_test(request)
         request = testing.DummyRequest({'id': 3,
                                         'question': 1})
         info = self._callFUT(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        
+
     def test_no_attempts(self):
         request = testing.DummyRequest(_createFormData(noAttemptsData))
         request.GET["id"]=1
@@ -739,19 +747,19 @@ class ViewQuestion(unittest.TestCase):
         self.assertEqual(test, info['test'])
         self.assertTrue('form' in info)
         self.assertEqual('/test?id=1', info['link'])
-     
+
     def test_answer_multiple_choice(self):
         ###Answer Multiple Choice Question###
         request = testing.DummyRequest(
                           _createFormData(answerMultipleChoiceData))
         request.GET['id'] = 1
         request.session["current_test"] = {"name": "Math Test",
-                                           "1": "2",}      
+                                           "1": "2",}
         info = self._callFUT(request)
         self.assertEqual('/question?id=1;question=2', info.location)
         self.assertEqual('2', request.session['current_test']['1'])
-        
-    def test_answer_select_true(self):    
+
+    def test_answer_select_true(self):
         ###Answer Select True Question###
         request = testing.DummyRequest(_createFormData(answerSelectTrueData))
         request.GET['id'] = 1
@@ -810,7 +818,7 @@ class ViewTest(unittest.TestCase):
                                         'question': 1})
         info = self._callFUT(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-       
+
     def test_too_late(self):
         request = testing.DummyRequest(_createFormData(tooLateData))
         request.GET["id"]=1
@@ -824,7 +832,7 @@ class ViewTest(unittest.TestCase):
                                         'question': 1})
         info = self._callFUT(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        
+
     def test_no_attempts(self):
         request = testing.DummyRequest(_createFormData(noAttemptsData))
         request.GET["id"]=1
@@ -858,6 +866,7 @@ class ViewTest(unittest.TestCase):
 
 
 class ViewGradeTest(unittest.TestCase):
+    
     def setUp(self):
         self.config = testing.setUp()
         self.session = _initTestingDB()
@@ -873,14 +882,14 @@ class ViewGradeTest(unittest.TestCase):
         request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
         from views import view_grade_test
         return view_grade_test(request)
-    
+
     def test_permission_denied(self):
         request = testing.DummyRequest()
         self.config.testing_securitypolicy(userid='student',permissive=True)
         from views import view_grade_test
         info = view_grade_test(request)
-        self.assertEqual(type(info),type(HTTPFound(location='/')))    
-        
+        self.assertEqual(type(info),type(HTTPFound(location='/')))
+
     def test_view_test(self):
         request = testing.DummyRequest({'id': 1})
         info = self._callFUT(request)
@@ -932,7 +941,7 @@ class ViewGradeTest(unittest.TestCase):
 
 
 
-        question = Question(False, "shortAnswer", "What is you're name?", 
+        question = Question(False, "shortAnswer", "What is you're name?",
                                                                     2, 1)
         self.session.add(question)
         self.session.flush()
@@ -947,10 +956,10 @@ class ViewGradeTest(unittest.TestCase):
                                      Answer.question_id == question.id).all()
         self.assertEqual(1, len(answers))
         self.assertEqual("username*:James Boisture", answers[0].answer)
-        
+
         question = Question(False, "shortAnswer", "What is you're name?",1,1 )
-        
-        request = testing.DummyRequest({'id': 1})                                                  
+
+        request = testing.DummyRequest({'id': 1})
         request.session["current_test"] = {'name':'Math Test',
                                            '1': '2',
                                            '2':[],
@@ -963,3 +972,103 @@ class ViewGradeTest(unittest.TestCase):
         self.assertEqual('2. INCORRECT', info['questions'][1])
         self.assertEqual('3. Waiting for teacher to grade.', info['questions'][2])
 
+class ViewUngradedTests(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+        self.session = _initTestingDB()
+
+    def tearDown(self):
+        testing.tearDown()
+        _clearTestingDB(self.session)
+
+    def _callFUT(self, request):
+        _populateDB(self.session)
+        self.config.testing_securitypolicy(userid='teacher',
+                                          permissive=True)
+        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        from views import view_ungraded_tests
+        return view_ungraded_tests(request)
+
+    def test_permission_denied(self):
+        request = testing.DummyRequest()
+        self.config.testing_securitypolicy(userid='student',permissive=True)
+        from views import view_ungraded_tests
+        info = view_ungraded_tests(request)
+        self.assertEqual(type(info),type(HTTPFound(location='/')))
+
+    def test_view_ungraded_tests(self):
+        request = testing.DummyRequest({'id':1})
+        test1 = TakenTest(1, 'student', 'student', 3, 3, False,1)
+        self.session.add(test1)
+        self.session.flush()
+        info = self._callFUT(request)
+        self.assertEqual(info['message'], 'There are no tests to grade')
+        test2 = TakenTest(1, 'student', 'student', 0, 0, True,1)
+        self.session.add(test2)
+        self.session.flush()
+        info = self._callFUT(request)
+        self.assertEqual(info['test'].name, 'Math Test')
+        self.assertEqual(info['taken_tests'],[test2])
+        self.assertEqual(info['message'], '')
+        request.session['current_test']="I am a test"
+        info = self._callFUT(request)
+        self.assertTrue("current_test" not in request.session)
+
+class ViewGradeQuestion(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+        self.session = _initTestingDB()
+
+    def tearDown(self):
+        testing.tearDown()
+        _clearTestingDB(self.session)
+
+    def _callFUT(self, request):
+        _populateDB(self.session)
+        self.config.testing_securitypolicy(userid='teacher',
+                                          permissive=True)
+        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        from views import view_grade_question
+        return view_grade_question(request)
+
+    def test_permission_denied(self):
+        request = testing.DummyRequest()
+        self.config.testing_securitypolicy(userid='student',permissive=True)
+        from views import view_grade_question
+        info = view_grade_question(request)
+        self.assertEqual(type(info),type(HTTPFound(location='/')))
+        
+    def test_view_grade_question(self):
+        dbsession = DBSession()
+        _populateDB(self.session)
+        request = testing.DummyRequest({'id':1})
+        test1 = TakenTest(1, 'student', 'student', 3, 3, False,1)
+        self.session.add(test1)
+        self.session.flush()
+        question1 = dbsession.query(Question).first()
+        takenquestion = TakenAnswer(1, question1, '2', False, False)
+        self.session.add(takenquestion)
+        self.session.flush()
+        info = self._callFUT(request)
+        self.assertEqual(len(info['message']), 3)
+        self.assertEqual(info['message'][0], "Question Number 1")
+        self.assertEqual(info['message'][1], "Question: 1+1 = ?") 
+        self.assertEqual(info['message'][2], "student's answer: 2") 
+        
+    def test_grade_correct_question(self):
+        dbsession = DBSession()
+        _populateDB(self.session)
+        request = testing.DummyRequest({'id':1},_createFormData({'correct':True}))
+        test1 = TakenTest(1, 'student', 'student', 3, 3, False,1)
+        self.session.add(test1)
+        self.session.flush()
+        question1 = dbsession.query(Question).first()
+        takenquestion = TakenAnswer(1, question1, '2', False, False)
+        self.session.add(takenquestion)
+        self.session.flush()
+        info = self._callFUT(request)
+        print info
+        
+        
+        
+        
