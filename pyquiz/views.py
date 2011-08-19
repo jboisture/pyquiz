@@ -468,9 +468,9 @@ def view_course(request):
     current_tests = []
     upcoming_tests = []
     for test in tests:
-        if (test.start_time - datetime.datetime.now()) > (datetime.timedelta(0)):
+        if (test.start_time > datetime.datetime.now()):
             upcoming_tests.append(test)
-        elif (test.end_time - datetime.datetime.now()) < (datetime.timedelta(0)):
+        elif (test.end_time < datetime.datetime.now()):
             old_tests.append(test)
         else:
             if test.attempts_remaining <= 0:
