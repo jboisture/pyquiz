@@ -261,7 +261,7 @@ def view_index(request):
              courses.append(course)
     messages.append('')
 #    if len(courses) == 0:
-#        messages[2] == 'You have no classes' ##Depreceated? 
+#        messages[2] == 'You have no classes' ##Depreceated due to SchoolTool integration? 
     for course in courses:
         course.url = 'course?id='+str(course.id)
     return {'messages': messages, 'courses': courses, 'main': main}
@@ -293,7 +293,7 @@ def view_ungraded_tests(request):
 
 def view_grade_question(request):
     """
-    This view lets a teacher grade aquestion thatcan not be graded automatically
+    This view lets a teacher grade a question that can not be graded automatically
     """
     if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
         return HTTPFound(location='/')  
