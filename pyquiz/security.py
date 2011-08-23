@@ -7,4 +7,4 @@ def groupfinder(userid, request):
     if userid in USERS:
         return GROUPS.get(userid, [])
         
-#Does this file actually do anything?
+#Does this file actually do anything? Can we depreceate this?

@@ -19,16 +19,14 @@ def schooltool_login(username, password,user_info):
     dbsession = DBSession()
     for course in user_info['courses']:
         c = dbsession.query(Course).filter(Course.course_id == course[1]).all()
-        if len(c) == 0:
-            if 'teacher' not in user_info['roles']:
+        if len(c) == 0: 
+            if 'teacher' not in user_info['roles']: 
                  new_course = Course(course[0], course[1], course[2], '')
-                 print "student"
             if 'teacher' in user_info['roles']:
                  new_course = Course(course[0], course[1], course[2], user_info['name'])
-                 print "teacher"
             dbsession.add(new_course)
             dbsession.flush()
-        if len(c) == 1 and user_info['roles'] == 'teacher':
+        if len(c) == 1 and user_info['roles'] == ['teacher']:
             if (len(c[0].instructor) != 0 and 
                           user_info['name'] not in c[0].instructor):
                 c[0].instructor += "%&"
@@ -52,8 +50,8 @@ def login(request):
         username = request.params['login']
         password = request.params['password']
         server = ServerProxy(serverLocation, transport = trans)
-        user_info = server.get_user_info(username)
         if server.login(username, password):
+            user_info = server.get_user_info(username)
             userinfo = schooltool_login(username, password, user_info)
             request.session['user'] = userinfo
             headers = remember(request, userinfo['roles'][0])

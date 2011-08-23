@@ -40,10 +40,14 @@ def _clearTestingDB(session):
     for takentest in takentests:
         session.delete(takentest)
         session.flush()
-    takenanswers = session.query(TakenAnswer).all()
-    for takenanswer in takenanswers:
-        session.delete(takenanswer)
+    courses = session.query(Course).all()
+    for course in courses:
+        session.delete(course)
         session.flush()
+    takenanswers = session.query(TakenAnswer).all()
+    #for takenanswer in takenanswers:
+    #    session.delete(takenanswer)
+    #    session.flush()
 
 def _createFormData(data):
     POST = MultiDict()
@@ -642,6 +646,7 @@ class ViewIndex(unittest.TestCase):
         self.assertEqual("teacher'%&teacherII", info['courses'][0].instructor)
 
     def test_view_as_student(self):
+        _populateDB(self.session)
         self.config.testing_securitypolicy(userid='student',permissive=True)
         request = testing.DummyRequest()
         request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
@@ -866,7 +871,7 @@ class ViewTest(unittest.TestCase):
 
 
 class ViewGradeTest(unittest.TestCase):
-    
+
     def setUp(self):
         self.config = testing.setUp()
         self.session = _initTestingDB()
@@ -970,7 +975,7 @@ class ViewGradeTest(unittest.TestCase):
         self.assertEqual('1. Correct', info['questions'][0])
         self.assertEqual('2. INCORRECT', info['questions'][1])
         self.assertEqual('3. Waiting for teacher to grade.', info['questions'][2])
-        
+
         request = testing.DummyRequest({'id': 1})
         request.session["current_test"] = {'name':'Math Test',
                                            '1': '2',
@@ -1066,7 +1071,7 @@ class ViewGradeQuestion(unittest.TestCase):
         from views import view_grade_question
         info = view_grade_question(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        
+
     def test_view_grade_question(self):
         dbsession = DBSession()
         _populateDB(self.session)
@@ -1081,9 +1086,9 @@ class ViewGradeQuestion(unittest.TestCase):
         info = self._callFUT(request)
         self.assertEqual(len(info['message']), 3)
         self.assertEqual(info['message'][0], "Question Number 1")
-        self.assertEqual(info['message'][1], "Question: 1+1 = ?") 
-        self.assertEqual(info['message'][2], "student's answer: 2") 
-        
+        self.assertEqual(info['message'][1], "Question: 1+1 = ?")
+        self.assertEqual(info['message'][2], "student's answer: 2")
+
     def test_grade_correct_question(self):
         dbsession = DBSession()
         _populateDB(self.session)
@@ -1099,7 +1104,7 @@ class ViewGradeQuestion(unittest.TestCase):
         info = self._callFUT(request)
         self.assertTrue(type(info), type(HTTPFound()))
         self.assertEqual(test1.correct_graded_questions,3)
-        
+
     def test_grade_incorrect_question(self):
         dbsession = DBSession()
         _populateDB(self.session)
@@ -1116,7 +1121,7 @@ class ViewGradeQuestion(unittest.TestCase):
         info = self._callFUT(request)
         self.assertTrue(type(info), type(HTTPFound()))
         self.assertEqual(test1.correct_graded_questions,0)
-        
+
 
 class ViewGradeSubmittedTest(unittest.TestCase):
     def setUp(self):
@@ -1141,10 +1146,10 @@ class ViewGradeSubmittedTest(unittest.TestCase):
         from views import view_grade_submitted_test
         info = view_grade_submitted_test(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-    
+
     def test_too_early(self):
         _populateDB(self.session)
-        test1 = Test("TooEarlyTest", 1, datetime.datetime.now()+datetime.timedelta(days=20), 
+        test1 = Test("TooEarlyTest", 1, datetime.datetime.now()+datetime.timedelta(days=20),
                                       datetime.datetime.now()+datetime.timedelta(days=19),
                                       5000, "assignment", 1)
         self.session.add(test1)
@@ -1160,7 +1165,7 @@ class ViewGradeSubmittedTest(unittest.TestCase):
 
     def test_too_late(self):
         _populateDB(self.session)
-        test1 = Test("TooEarlyTest", 1, datetime.datetime.now()-datetime.timedelta(days=20), 
+        test1 = Test("TooEarlyTest", 1, datetime.datetime.now()-datetime.timedelta(days=20),
                                       datetime.datetime.now()-datetime.timedelta(days=19),
                                       5000, "assignment", 1)
         self.session.add(test1)
@@ -1172,10 +1177,10 @@ class ViewGradeSubmittedTest(unittest.TestCase):
         request.GET["id"]=1
         info = self._callFUT(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        
+
     def test_no_attempts(self):
         _populateDB(self.session)
-        test1 = Test("TooEarlyTest", 1, datetime.datetime.now(), 
+        test1 = Test("TooEarlyTest", 1, datetime.datetime.now(),
                                       datetime.datetime.now()+datetime.timedelta(days=1),
                                       0, "assignment", 1)
         self.session.add(test1)
@@ -1187,7 +1192,7 @@ class ViewGradeSubmittedTest(unittest.TestCase):
         request.GET["id"]=1
         info = self._callFUT(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-    
+
     def test_view_grade_submitted_test_ungraded_question(self):
         _populateDB(self.session)
         dbsession = DBSession()
@@ -1203,7 +1208,7 @@ class ViewGradeSubmittedTest(unittest.TestCase):
         info = self._callFUT(request)
         self.assertEqual(info['messages'][0], 'Test Name: Math Test')
         self.assertEqual(info['answers'][0].html, '<a href="grade_question?id=1">1. Not Graded</a>')
-        
+
     def test_view_grade_submitted_test_graded_correct(self):
         _populateDB(self.session)
         dbsession = DBSession()
@@ -1219,7 +1224,7 @@ class ViewGradeSubmittedTest(unittest.TestCase):
         info = self._callFUT(request)
         self.assertEqual(info['messages'][0], 'Test Name: Math Test')
         self.assertEqual(info['answers'][0].html, '<p>2. Graded: Correct</p>')
-        
+
     def test_view_grade_submitted_test_graded_incorrect(self):
         _populateDB(self.session)
         dbsession = DBSession()
@@ -1235,8 +1240,8 @@ class ViewGradeSubmittedTest(unittest.TestCase):
         info = self._callFUT(request)
         self.assertEqual(info['messages'][0], 'Test Name: Math Test')
         self.assertEqual(info['answers'][0].html, '<p>3. Graded: Incorrect</p>')
-        
-        
+
+
 class ViewCourseTeacher(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
@@ -1259,19 +1264,19 @@ class ViewCourseTeacher(unittest.TestCase):
         self.config.testing_securitypolicy(userid='student',permissive=True)
         from views import view_course_teacher
         info = view_course_teacher(request)
-        self.assertEqual(type(info),type(HTTPFound(location='/'))) 
+        self.assertEqual(type(info),type(HTTPFound(location='/')))
         request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
         request.GET['id'] = 1
         info = view_course_teacher(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-    
+
     def test_view_course_teacher(self):
-        oldtest = Test("OldTest", 1, datetime.datetime.now()-datetime.timedelta(days=20), 
+        oldtest = Test("OldTest", 1, datetime.datetime.now()-datetime.timedelta(days=20),
                                       datetime.datetime.now()-datetime.timedelta(days=19),
                                       5000, "assignment", 1)
         self.session.add(oldtest)
         self.session.flush()
-        futuretest = Test("FutureTest", 1, datetime.datetime.now()+datetime.timedelta(days=20), 
+        futuretest = Test("FutureTest", 1, datetime.datetime.now()+datetime.timedelta(days=20),
                                       datetime.datetime.now()+datetime.timedelta(days=19),
                                       5000, "assignment", 1)
         self.session.add(futuretest)
@@ -1283,8 +1288,9 @@ class ViewCourseTeacher(unittest.TestCase):
         request.session['current_test']="I am a test"
         info = self._callFUT(request)
         self.assertTrue('current_test' not in request.session)
-        
+
     def test_view_course_teacher_no_tests(self):
+        _addCourseDB(self.session)
         request = testing.DummyRequest({'id':1})
         request.session['current_test']="I am a test"
         self.config.testing_securitypolicy(userid='teacher',
@@ -1293,8 +1299,8 @@ class ViewCourseTeacher(unittest.TestCase):
         from views import view_course_teacher
         info = view_course_teacher(request)
         self.assertTrue('current_test' not in request.session)
-  
-  
+
+
 class ViewCourse(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
@@ -1315,34 +1321,34 @@ class ViewCourse(unittest.TestCase):
     def _callFUTStudent(self,request):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='student',
-                                           permissive=True)        
+                                           permissive=True)
         request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}})
         from views import view_course
-        return view_course(request) 
-        
+        return view_course(request)
+
     def test_permission_denied(self):
         request = testing.DummyRequest({'id':1})
         self.config.testing_securitypolicy(userid='student',permissive=True)
         from views import view_course
         info = view_course(request)
-        self.assertEqual(type(info),type(HTTPFound(location='/'))) 
-        
+        self.assertEqual(type(info),type(HTTPFound(location='/')))
+
     def test_view_course_as_teacher(self):
         request = testing.DummyRequest({'id':1})
         info = self._callFUTTeacher(request)
-        
+
     def test_view_course_as_student(self):
-        oldtest = Test("OldTest", 1, datetime.datetime.now()-datetime.timedelta(days=20), 
+        oldtest = Test("OldTest", 1, datetime.datetime.now()-datetime.timedelta(days=20),
                                       datetime.datetime.now()-datetime.timedelta(days=19),
                                       5000, "assignment", 1)
         self.session.add(oldtest)
         self.session.flush()
-        nowtest = Test("NowTest", 1, datetime.datetime.now()-datetime.timedelta(days=1), 
+        nowtest = Test("NowTest", 1, datetime.datetime.now()-datetime.timedelta(days=1),
                                       datetime.datetime.now()+datetime.timedelta(days=1),
                                       0, "assignment", 1)
         self.session.add(nowtest)
         self.session.flush()
-        futuretest = Test("FutureTest", 1, datetime.datetime.now()+datetime.timedelta(days=20), 
+        futuretest = Test("FutureTest", 1, datetime.datetime.now()+datetime.timedelta(days=20),
                                       datetime.datetime.now()+datetime.timedelta(days=19),
                                       5000, "assignment", 1)
         self.session.add(futuretest)
@@ -1354,5 +1360,341 @@ class ViewCourse(unittest.TestCase):
         self.assertEqual(len(info['old_tests']), 2)
         self.assertEqual(len(info['upcoming_tests']), 1)
         self.assertEqual(info['messages'],[u'Course: Math 101', u"Instructor(s): teacher', teacherII", 'There are 5 tests to take:'])
+
+
+class LoginTest(unittest.TestCase):
+    def setUp(self):
+        self.config = testing.setUp()
+        self.session = _initTestingDB()
+
+    def tearDown(self):
+        testing.tearDown()
+        _clearTestingDB(self.session)
+
+    def test_log_in(self):
+        request = testing.DummyRequest()
+        _populateDB(self.session)
+        self.config.testing_securitypolicy(userid='teacher',
+                                          permissive=True)
+        request.params = {'login': u'name', 'password': u'password', 'form.submitted': u'Log In'}
+        info = login(request)
+        self.assertEqual(request.session, {'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'name', 'roles': ['teacher']}})
+        self.assertEqual(type(info), type(HTTPFound()))
+        self.assertEqual(info.location, '/index')
         
+    def test_log_in_bad_info(self):
+        request = testing.DummyRequest()
+        _populateDB(self.session)
+        self.config.testing_securitypolicy(userid='teacher',
+                                          permissive=True)
+        request.params = {'login': u'name', 'password': u'INCORRECT', 'form.submitted': u'Log In'}
+        info = login(request)
+        self.assertEqual(request.session, {})
+        self.assertEqual(info['message'], 'Failed login')
+    
+    def test_log_in_noinfo(self):
+        request = testing.DummyRequest()
+        _populateDB(self.session)
+        self.config.testing_securitypolicy(userid='teacher',
+                                          permissive=True)
+        info = login(request)
+        self.assertEqual(request.session, {})
+        self.assertEqual(info['message'], '')
         
+    def test_log_in_already_loggedin(self):
+        request = testing.DummyRequest()
+        _populateDB(self.session)
+        self.config.testing_securitypolicy(userid='student',
+                                           permissive=True)
+        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}})
+        info = login(request)
+        self.assertEqual(type(info), type(HTTPFound()))
+    
+    def test_log_out(self):
+        request = testing.DummyRequest()
+        _populateDB(self.session)
+        self.config.testing_securitypolicy(userid='teacher',
+                                          permissive=True)
+        request.params = {'login': u'name', 'password': u'password', 'form.submitted': u'Log In'}
+        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        info = logout(request)
+        self.assertEqual(request.session, {})
+        self.assertEqual(type(info), type(HTTPFound()))
+        
+    def test_schooltool_no_courses(self):
+        request = testing.DummyRequest()
+        self.config.testing_securitypolicy(userid='teacher',
+                                          permissive=True)
+        userinfo = {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}
+        userinfo = schooltool_login('name','password',userinfo)
+        dbsession = DBSession()
+        c = dbsession.query(Course).filter(Course.course_id == 1).all()
+        self.assertEqual(c[0].course_name,"Math101 (1)")
+        self.assertEqual(c[0].instructor,"teacher")
+        
+    def test_schooltool_no_courses_student(self):
+        request = testing.DummyRequest()
+        self.config.testing_securitypolicy(userid='teacher',
+                                          permissive=True)
+        userinfo = {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'Student', 'roles': []}
+        userinfo = schooltool_login('Student','password',userinfo)
+        dbsession = DBSession()
+        c = dbsession.query(Course).filter(Course.course_id == 1).all()
+        self.assertEqual(c[0].course_name,"Math101 (1)")
+
+    def test_log_in_no_instructor(self):
+        request = testing.DummyRequest()
+        course = Course(1,1,"Math 101", "")
+        self.session.add(course)
+        self.session.flush()
+        self.config.testing_securitypolicy(userid='teacher',
+                                          permissive=True)
+        request.params = {'login': u'name', 'password': u'password', 'form.submitted': u'Log In'}
+        info = login(request)
+        self.assertEqual(request.session, {'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'name', 'roles': ['teacher']}})
+
+
+class ZFunctionalTests(unittest.TestCase): #Z so it's called last. wsgi stuff messes up deform. 
+    
+    teacher_login = '?login=name&password=password' \
+                   '&form.submitted=Login'
+    student_login = '?login=Student&password=password' \
+                   '&form.submitted=Login'
+    wrong_login = '?login=name&password=incorrect' \
+                   '&form.submitted=Login'
+    
+    def setUp(self):
+        from pyquiz import main
+        settings = {'sqlalchemy.url': 'sqlite:///pyquiz.db'}
+        app = main({}, **settings)
+        from webtest import TestApp
+        self.testapp = TestApp(app)
+    
+    def tearDown(self):
+        del self.testapp
+        DBSession.remove()
+    
+    def test_view_login(self):
+        res = self.testapp.get('/',status=200)
+        self.assertTrue('Login' in res.body)
+        
+    def test_404(self):
+        self.testapp.get('/IDONTEXIST', status=404)
+    
+    def test_invalid_login(self):
+        res = self.testapp.get(self.wrong_login,status=200)
+        self.assertTrue('Failed login' in res.body)
+        
+    def test_index_anonymous(self):
+        res = self.testapp.get('/index?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_index_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/index?id=1', status=200)
+        self.assertTrue('Welcome' in res.body)
+
+    def test_index_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/index?id=1', status=200)
+        self.assertTrue('Welcome' in res.body)
+
+    def test_create_test_anonymous(self):
+        res = self.testapp.get('/create_test?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_create_test_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/create_test?id=1', status=200)
+        self.assertTrue('' in res.body)
+
+    def test_create_test_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/create_test?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_grade_submitted_test_anonymous(self):
+        res = self.testapp.get('/grade_submitted_test?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_grade_submitted_test_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/grade_submitted_test?id=1', status=200)
+        self.assertTrue('' in res.body)
+
+    def test_grade_submitted_test_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/grade_submitted_test?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_grade_question_anonymous(self):
+        res = self.testapp.get('/grade_question?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_grade_question_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/grade_question?id=1', status=200)
+        self.assertTrue('' in res.body)
+
+    def test_grade_question_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/grade_question?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_ungraded_tests_anonymous(self):
+        res = self.testapp.get('/ungraded_tests?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_ungraded_tests_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/ungraded_tests?id=1', status=200)
+        self.assertTrue('' in res.body)
+
+    def test_ungraded_tests_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/ungraded_tests?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_question_anonymous(self):
+        res = self.testapp.get('/question?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_question_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/question?id=1', status=200)
+        self.assertTrue('' in res.body)
+
+    def test_question_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/question?id=1', status=200)
+        self.assertTrue('' in res.body)
+
+    def test_test_anonymous(self):
+        res = self.testapp.get('/test?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_test_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/test?id=1', status=200)
+        self.assertTrue('' in res.body)
+
+    def test_test_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/test?id=1', status=200)
+        self.assertTrue('' in res.body)
+
+    def test_course_anonymous(self):
+        res = self.testapp.get('/course?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_course_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/course?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_course_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/course?id=1', status=200)
+        self.assertTrue('' in res.body)
+
+    def test_course_teacher_anonymous(self):
+        res = self.testapp.get('/course_teacher?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_course_teacher_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/course_teacher?id=1', status=200)
+        self.assertTrue('' in res.body)
+
+    def test_course_teacher_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/course_teacher?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_grade_anonymous(self):
+        res = self.testapp.get('/grade?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_grade_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/grade?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_grade_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/grade?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_edit_test_anonymous(self):
+        res = self.testapp.get('/edit_test?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_edit_test_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/edit_test?id=1', status=200)
+        self.assertTrue('' in res.body)
+
+    def test_edit_test_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/edit_test?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_edit_question_anonymous(self):
+        res = self.testapp.get('/edit_question?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_edit_question_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/edit_question?id=1', status=200)
+        self.assertTrue('' in res.body)
+
+    def test_edit_question_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/edit_question?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_delete_test_anonymous(self):
+        res = self.testapp.get('/delete_test?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_delete_test_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/delete_test?id=1', status=200)
+        self.assertTrue('' in res.body)
+
+    def test_delete_test_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/delete_test?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_add_questions_anonymous(self):
+        res = self.testapp.get('/add_questions?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_add_questions_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/add_questions?id=1', status=200)
+        self.assertTrue('' in res.body)
+
+    def test_add_questions_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/add_questions?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_logout_anonymous(self):
+        res = self.testapp.get('/logout?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_logout_teacher(self):
+        self.testapp.get(self.teacher_login, status=302)
+        res = self.testapp.get('/logout?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+    def test_logout_student(self):
+        self.testapp.get(self.student_login, status=302)
+        res = self.testapp.get('/logout?id=1', status=302)
+        self.assertTrue('' in res.body)
+
+
+
+

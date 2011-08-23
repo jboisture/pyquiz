@@ -37,7 +37,7 @@ def view_create_test(request):
     """
     This is the view for the form page where tests are created.
     """
-    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
+    if 'user' not in request.session.keys() or 'teacher' not in request.session['user']['roles'] :
         return HTTPFound(location='/')
     main = get_renderer('templates/master.pt').implementation()
 
@@ -58,7 +58,7 @@ def view_add_questions(request):
     """
     this is the view to add a question to an existing test
     """
-    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
+    if 'user' not in request.session.keys() or 'teacher' not in request.session['user']['roles'] :
         return HTTPFound(location='/')
     main = get_renderer('templates/master.pt').implementation()
     test_id = int(request.GET["id"])
@@ -122,7 +122,7 @@ def view_edit_question(request):
     this view allows a teacher to edit an existing question in an existing test
     """
     ###load the question number and test id###
-    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
+    if 'user' not in request.session.keys() or 'teacher' not in request.session['user']['roles'] :
         return HTTPFound(location='/')
     main = get_renderer('templates/master.pt').implementation()
     test_id = int(request.GET["id"])
@@ -162,13 +162,14 @@ def view_edit_question(request):
         appstruct = {'text':(question.question)}
     form = Form(schema, buttons=('submit changes',), 
                   use_ajax=True)
-    return {"test":test,'form':form.render(appstruct), 'question': question, 'main': main}
+    form = form.render(appstruct)
+    return {"test":test,'form':form, 'question': question, 'main': main}
 
 def view_delete_test(request):
     """
     This view allows teachers to delete a test in a course they teach
     """
-    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
+    if 'user' not in request.session.keys() or 'teacher' not in request.session['user']['roles'] :
         return HTTPFound(location='/')
     main = get_renderer('templates/master.pt').implementation()
     test_id = int(request.GET["id"])
@@ -206,7 +207,7 @@ def view_edit_test(request):
     """
     This view allows a teacher to edit an existing test
     """
-    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
+    if 'user' not in request.session.keys() or 'teacher' not in request.session['user']['roles'] :
         return HTTPFound(location='/')
     main = get_renderer('templates/master.pt').implementation()
     test_id = int(request.GET["id"]) #get test id
@@ -268,7 +269,7 @@ def view_ungraded_tests(request):
     This view lets a teacher view all of the instances of a test that have been taken
     and have tests still have questions waiting for teachers to grade.
     """
-    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
+    if 'user' not in request.session.keys() or 'teacher' not in request.session['user']['roles'] :
         return HTTPFound(location='/')  
     main = get_renderer('templates/master.pt').implementation()
     if "current_test" in request.session.keys():
@@ -291,7 +292,7 @@ def view_grade_question(request):
     """
     This view lets a teacher grade a question that can not be graded automatically
     """
-    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
+    if 'user' not in request.session.keys() or 'teacher' not in request.session['user']['roles'] :
         return HTTPFound(location='/')  
     main = get_renderer('templates/master.pt').implementation()
     if "current_test" in request.session.keys():
@@ -347,7 +348,7 @@ def view_grade_submitted_test(request):
     This view lets a teacher view information on a test that a student has submitted and
     provides links to ungraded questions in the test so the teacher may grade them.
     """
-    if authenticated_userid(request) != 'teacher' or 'user' not in request.session.keys():
+    if 'user' not in request.session.keys() or 'teacher' not in request.session['user']['roles']:
         return HTTPFound(location='/')  
     main = get_renderer('templates/master.pt').implementation()
     if "current_test" in request.session.keys():
@@ -379,6 +380,8 @@ def view_grade_submitted_test(request):
     return {'messages':messages, 'answers':answers, 'main': main}
             
 def view_course_teacher(request):
+    if authenticated_userid(request) == None or 'user' not in request.session.keys():
+        return HTTPFound(location='/')
     if 'current_test' in request.session.keys(): 
         request.session.pop('current_test')
     course_id = int(request.GET["id"])
