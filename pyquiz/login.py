@@ -11,12 +11,11 @@ from pyquiz.security import USERS
 from xmlrpclib import ServerProxy
 from __init__ import trans, serverLocation
 
-def schooltool_login(username, password):
+def schooltool_login(username, password,user_info):
     """
     This method gets information from schooltool about a users courses and their role
     """
     server = ServerProxy(serverLocation, transport = trans)
-    user_info = server.get_user_info(username)
     dbsession = DBSession()
     for course in user_info['courses']:
         c = dbsession.query(Course).filter(Course.course_id == course[1]).all()
@@ -53,8 +52,9 @@ def login(request):
         username = request.params['login']
         password = request.params['password']
         server = ServerProxy(serverLocation, transport = trans)
+        user_info = server.get_user_info(username)
         if server.login(username, password):
-            userinfo = schooltool_login(username, password)
+            userinfo = schooltool_login(username, password, user_info)
             request.session['user'] = userinfo
             headers = remember(request, userinfo['roles'][0])
             return HTTPFound(location='/index',
