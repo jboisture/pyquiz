@@ -1465,7 +1465,7 @@ class ZFunctionalTests(unittest.TestCase): #Z so it's called last. wsgi stuff me
     
     def setUp(self):
         from pyquiz import main
-        settings = {'sqlalchemy.url': 'sqlite:///pyquiz.db'}
+        settings = {'sqlalchemy.url': 'sqlite:///testpyquiz.db'}
         app = main({}, **settings)
         from webtest import TestApp
         self.testapp = TestApp(app)

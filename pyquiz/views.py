@@ -4,7 +4,7 @@ the pages of pyquiz.
 """
 
 from pyramid.request import Request
-from pyramid.httpexceptions import HTTPFound
+from pyramid.httpexceptions import HTTPFound, HTTPSeeOther
 from pyramid.renderers import get_renderer
 
 from schema import TestSchema, EditQuestionSchema
@@ -55,12 +55,11 @@ def view_create_test(request):
     return {'form':myform.render(appstruct), 'main': main}
 
 def view_add_questions(request):
-    """
+    """+
     this is the view to add a question to an existing test
     """
     if 'user' not in request.session.keys() or 'teacher' not in request.session['user']['roles'] :
         return HTTPFound(location='/')
-    main = get_renderer('templates/master.pt').implementation()
     test_id = int(request.GET["id"])
     dbsession = DBSession()
     test = dbsession.query(Test).filter(Test.id==test_id).first()
@@ -74,11 +73,12 @@ def view_add_questions(request):
         return HTTPFound(location='/edit_test?id='+str(test_id)) 
                                                     #redirect to the tests edit page
     schema = AddQuestionsSchema()
+    main = get_renderer('templates/master.pt').implementation()
     myform = Form(schema, buttons=('add questions',), 
                     use_ajax=True)
     return {'form':myform.render(), 'main': main}
 
-def view_change_dates(request): #Untested
+def view_change_dates(request): #Untested,because of incomplete
     """
     ###incomplete###
     this is the view to change the start and end dates of an existing test
@@ -124,7 +124,7 @@ def view_edit_question(request):
     ###load the question number and test id###
     if 'user' not in request.session.keys() or 'teacher' not in request.session['user']['roles'] :
         return HTTPFound(location='/')
-    main = get_renderer('templates/master.pt').implementation()
+    
     test_id = int(request.GET["id"])
     quesiton_num = 1
     try:
@@ -146,8 +146,11 @@ def view_edit_question(request):
     if 'submit changes' in post:
         controls = post.items()
         parse_edit_form_data(controls, dbsession, question)
-        return HTTPFound(location='/edit_test?id='+str(test.id))
-
+        location ='/edit_test?id='+str(test.id)
+        return HTTPSeeOther(location=location)
+    
+    main = get_renderer('templates/master.pt').implementation()
+    
     if (question.question_type == "multipleChoice" or
         question.question_type == "selectTrue"):
         all_answers = dbsession.query(Answer).filter(

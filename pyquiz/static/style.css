@@ -75,6 +75,11 @@ li {
     line-height: 16px;
 }
 
+li.left {
+font-size: 12px;
+line-height: 16px;
+}
+
 p.small {
     font-size: 10px;
     line-height: 14px;

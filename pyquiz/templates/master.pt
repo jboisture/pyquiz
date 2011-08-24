@@ -25,11 +25,14 @@
      <div class="header">
 	  <h1 class='brand'>PyQuiz</h1>
 	   <ul class='navigation'> 
-	     <li><a href="/">return home</a></li> 
+	     <li><a href="/">home</a></li> 
 	   </ul>
+	   <span tal:condition='"user" in request.session.keys()'>
        <ul class='second-nav'>
+		 <li class='left'>Logged in as ${request.session["user"]["first_name"]} ${request.session["user"]["last_name"]}  | </li>
          <li><a href="/logout">logout</a></li>
        </ul>
+       </span>
      </div>
 <div class='page'>
        <span metal:define-slot="content">

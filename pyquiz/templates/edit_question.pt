@@ -7,9 +7,9 @@
   <div class='body'>
         <span tal:replace="structure form"/>
 		<script type="text/javascript">
-		  jQuery(function() {
-			 deform.load();
-			 });
+		  /* jQuery(function() {
+			  deform.load();
+			  }); */
 		</script>
       </div>
     </div>
