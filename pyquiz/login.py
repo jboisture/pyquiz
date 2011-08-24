@@ -11,7 +11,7 @@ from pyquiz.security import USERS
 from xmlrpclib import ServerProxy
 from __init__ import trans, serverLocation
 
-def schooltool_login(username, password, user_info):
+def schooltool_login(username, password,user_info):
     """
     This method gets information from schooltool about a users courses and their role
     """
