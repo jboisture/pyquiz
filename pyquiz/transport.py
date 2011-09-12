@@ -23,7 +23,6 @@ class SessionTransportBase(Transport):
         self.send_host(h, host)
         self.send_user_agent(h)
         self.send_content(h, request_body)
-
         response = h.getresponse()
         self.session = response.getheader("Set-Cookie",
                                          self.session).split(";")[0]

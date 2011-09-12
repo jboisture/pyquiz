@@ -12,24 +12,28 @@
         <td>Tests</td>
         <td>Start Date</td>
         <td>End Date</td>
+        <td>Term</td>
         <td>Attempts Remaining</td>
         </tr>
         <tr tal:repeat="test old_tests">
             <td>${test.name}</td>
             <td>${test.start_time.ctime()[:-13]}</td>
             <td>${test.end_time.ctime()[:-13]}</td>
+            <td>${test.term_name}</td>
             <td>${test.attempts_remaining}</td>
         </tr>
         <tr tal:repeat="test current_tests">
             <td><a href="${test.url}">${test.name}</a></td>
             <td>${test.start_time.ctime()[:-13]}</td>
             <td>${test.end_time.ctime()[:-13]}</td>
+            <td>${test.term_name}</td>
             <td>${test.attempts_remaining}</td>
         </tr>
         <tr tal:repeat="test upcoming_tests">
             <td>${test.name}</td>
             <td>${test.start_time.ctime()[:-13]}</td>
             <td>${test.end_time.ctime()[:-13]}</td>
+            <td>${test.term_name}</td>
             <td>${test.attempts_remaining}</td>
         </tr>
         </table>

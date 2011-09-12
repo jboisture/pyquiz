@@ -10,8 +10,8 @@
   <div class="middle align-center">      
    <p>${messages[1]}</p>
    <p>${messages[2]}</p>
-   <ul tal:repeat="course courses">
-    <li><a href="${course.url}">${course.course_name}</a></li>
+   <ul tal:repeat="section sections">
+    <li><a href="${section.url}">${section.course_name}</a></li>
    </ul>
   </div>
  </div>

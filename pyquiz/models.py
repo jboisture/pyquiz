@@ -92,7 +92,7 @@ class Test(Base):
     __tablename__ = "tests"
     id=Column(Integer, primary_key=True) #id to be used as a primary key
     name = Column(String) #name variable that must be a String
-    course = Column(String, ForeignKey("courses.id"))
+    course = Column(String, ForeignKey("sections.id"))
                                    #course variable that must be a String
     questions = relationship("Question", backref = 'tests') #establishes a 
                             #relationship between the test and it's questions
@@ -101,9 +101,11 @@ class Test(Base):
     attempts = Column(Integer)
     test_type = Column(String)
     schooltool_id = Column(String)
+    term_id = Column(String)
+    term_name = Column(String)
     
     def __init__(self, name, course, start_time, end_time,
-                                      attempts, test_type, schooltool_id):
+                 attempts, test_type, schooltool_id, term_id, term_name):
         """init function to create a new Test object"""
         self.name = name
         self.course = course
@@ -112,6 +114,8 @@ class Test(Base):
         self.attempts = attempts
         self.test_type
         self.schooltool_id = schooltool_id
+        self.term_id = term_id
+        self.term_name = term_name
 
 class Question(Base):
     """the Question class creates the question table used to 
@@ -156,24 +160,39 @@ class Answer(Base):
         self.answer = answer
         self.correct = correct
 
-class Course(Base):
+class Term(Base):
     """
-    The Course class creates the courses table that stores information about
-    all of the courses.
+    The Term class creates the terms table that stores information about
+    the terms a section covers.
     """
-    __tablename__ = 'courses'
+    __tablename__ = 'terms'
     id = Column(Integer, primary_key=True)
+    term_name = Column(String)
     term_id = Column(String)
-    course_id = Column(String)
+    section_id = Column(Integer, ForeignKey("sections.id"))
+
+    def __init__(self, term_name, term_id, section_id):
+        self.term_name = term_name
+        self.term_id = term_id
+        self.section_id = section_id
+
+class Section(Base):
+    """
+    The Section class is used to connect different
+    terms of the same section
+    """
+    __tablename__ = 'sections'
+    id = Column(Integer, primary_key=True)
     course_name = Column(String)
+    course_id = Column(String)
+    school_year = Column(String)
     instructor = Column(String)
 
-    def __init__(self, term_id, course_id, course_name, instructor):
-        self.term_id = term_id
-        self.course_id = course_id
+    def __init__(self, course_name, course_id, school_year, instructor):
         self.course_name = course_name
+        self.course_id = course_id
+        self.school_year = school_year
         self.instructor = instructor
-
     
 def initialize_sql(engine):
     """loads the database"""

@@ -4,7 +4,7 @@ tests are currently FIXED.
 import unittest
 from pyramid import testing
 
-from models import TakenTest, Test, Course, Question, TakenAnswer, Answer, initialize_sql
+from models import TakenTest, Test, Section, Question, TakenAnswer, Answer, initialize_sql
 from webob.multidict import MultiDict
 
 from pyramid.httpexceptions import HTTPFound
@@ -23,7 +23,7 @@ def _initTestingDB():
     return initialize_sql(engine)
 
 def _clearTestingDB(session):
-    from models import TakenTest, Course, Test, Question, Answer
+    from models import TakenTest, Section, Test, Question, Answer
     tests = session.query(Test).all()
     for test in tests:
         session.delete(test)
@@ -40,9 +40,9 @@ def _clearTestingDB(session):
     for takentest in takentests:
         session.delete(takentest)
         session.flush()
-    courses = session.query(Course).all()
-    for course in courses:
-        session.delete(course)
+    sections = session.query(Section).all()
+    for section in sections:
+        session.delete(section)
         session.flush()
     takenanswers = session.query(TakenAnswer).all()
     #for takenanswer in takenanswers:
@@ -110,13 +110,13 @@ def _populateDB(session):
                         test.id, 3)
     session.add(question)
     session.flush()
-    course = Course(1,1,"Math 101", "teacher'%&teacherII")
-    session.add(course)
+    section = Section(1,1,"Math 101", "teacher'%&teacherII")
+    session.add(section)
     session.flush()
 
-def _addCourseDB(session):
-    course = Course(1,1,"Math 101", "teacher")
-    session.add(course)
+def _addSectionDB(session):
+    section = Section(1,1,"Math 101", "teacher")
+    session.add(section)
     session.flush()
 
 
@@ -131,11 +131,11 @@ class ViewCreateTest(unittest.TestCase):
         _clearTestingDB(self.session)
 
     def _callFUT(self, formData):
-        _addCourseDB(self.session)
+        _addSectionDB(self.session)
         request = testing.DummyRequest(_createFormData(formData))
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         request.GET['id']=1
         from views import view_create_test
         return view_create_test(request)
@@ -150,7 +150,7 @@ class ViewCreateTest(unittest.TestCase):
         from views import view_create_test
         info = view_create_test(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
         request.GET['id'] = 1
         info = view_create_test(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
@@ -173,7 +173,7 @@ class ViewCreateTest(unittest.TestCase):
         self.assertFalse(answers[0].correct)
         self.assertEqual('2', answers[1].answer)
         self.assertTrue(answers[1].correct)
-        self.assertEqual(u'1',test.course)
+        self.assertEqual(u'1',test.section)
         _clearTestingDB(self.session)
 
     def test_create_selectTrue(self):###Test creating a selectTrue question with more than one correct answer###
@@ -194,7 +194,7 @@ class ViewCreateTest(unittest.TestCase):
         self.assertTrue(answers[0].correct)
         self.assertEqual('2', answers[1].answer)
         self.assertTrue(answers[1].correct)
-        self.assertEqual(u'1',test.course)
+        self.assertEqual(u'1',test.section)
         _clearTestingDB(self.session)
 
     def test_create_shortAnswer(self):###Test creating a shortAnswer question with more than one correct answer##
@@ -210,7 +210,7 @@ class ViewCreateTest(unittest.TestCase):
         self.assertEqual(question.question_type, "shortAnswer")
         answers = self.session.query(Answer).all()
         self.assertEqual(0, len(answers))
-        self.assertEqual(u'1',test.course)
+        self.assertEqual(u'1',test.section)
         _clearTestingDB(self.session)
 
     def test_create_all(self):###Test creating one of each type of question###
@@ -252,7 +252,7 @@ class ViewCreateTest(unittest.TestCase):
         answers = self.session.query(Answer).filter(
                                     Answer.question_id==questions[2].id).all()
         self.assertEqual(0, len(answers))
-        self.assertEqual(u'1',test.course)
+        self.assertEqual(u'1',test.section)
         _clearTestingDB(self.session)
 
 
@@ -271,7 +271,7 @@ class ViewAddQuestions(unittest.TestCase):
         request = testing.DummyRequest(_createFormData(formData))
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         request.GET['id']=1
         from views import view_add_questions
         return view_add_questions(request)
@@ -282,7 +282,7 @@ class ViewAddQuestions(unittest.TestCase):
         from views import view_add_questions
         info = view_add_questions(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
         request.GET['id'] = 1
         info = view_add_questions(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
@@ -343,7 +343,7 @@ class ViewEditQuestion(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         from views import view_edit_question
         return view_edit_question(request)
 
@@ -353,7 +353,7 @@ class ViewEditQuestion(unittest.TestCase):
         from views import view_edit_question
         info = view_edit_question(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
         request.GET['id'] = 1
         info = view_edit_question(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
@@ -484,7 +484,7 @@ class ViewDeleteTest(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         from views import view_delete_test
         return view_delete_test(request)
 
@@ -494,7 +494,7 @@ class ViewDeleteTest(unittest.TestCase):
         from views import view_delete_test
         info = view_delete_test(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
         request.GET['id'] = 1
         info = view_delete_test(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
@@ -507,7 +507,7 @@ class ViewDeleteTest(unittest.TestCase):
         self.assertEqual("Are you sure you want to delete this test?",
                          info['message'][0])
         self.assertEqual("Test: Math Test", info['message'][1])
-        self.assertEqual("Course: Math 101", info['message'][2])
+        self.assertEqual("Section: Math 101", info['message'][2])
         request = testing.DummyRequest({})
         request.GET['id'] = 1
         request.GET['no'] = 1
@@ -542,7 +542,7 @@ class ViewEditTest(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         from views import view_edit_test
         return view_edit_test(request)
 
@@ -552,7 +552,7 @@ class ViewEditTest(unittest.TestCase):
         from views import view_edit_test
         info = view_edit_test(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
         request.GET['id'] = 1
         info = view_edit_test(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
@@ -590,7 +590,7 @@ class ViewChooseTest(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         from views import view_choose_test
         return view_choose_test(request)
 
@@ -598,8 +598,8 @@ class ViewChooseTest(unittest.TestCase):
         request = testing.DummyRequest({})
         info = self._callFUT(request)
         tests = self.session.query(Test).all()
-        self.assertEqual("Math 101", info['tests'][0].course)
-        self.assertEqual("Math 102", info['tests'][1].course)
+        self.assertEqual("Math 101", info['tests'][0].section)
+        self.assertEqual("Math 102", info['tests'][1].section)
         self.assertEqual("edit_test?id=1", info['tests'][0].url)
         self.assertEqual("edit_test?id=2", info['tests'][1].url)
 
@@ -620,7 +620,7 @@ class ViewIndex(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        request.session.update({'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
         from views import view_index
         return view_index(request)
 
@@ -639,26 +639,26 @@ class ViewIndex(unittest.TestCase):
         self.assertTrue('current_test' not in request.session.keys())
         self.assertEqual(info['messages'], ['Welcome teacher to pyquiz.', 'You are currently teaching the following classes:', ''])
         info = self._callFUT(request)
-        self.assertEqual(1, len(info['courses']))
-        self.assertEqual("Math 101", info['courses'][0].course_name)
-        self.assertEqual("1", info['courses'][0].course_id)
-        self.assertEqual("1", info['courses'][0].term_id)
-        self.assertEqual("teacher'%&teacherII", info['courses'][0].instructor)
+        self.assertEqual(1, len(info['sections']))
+        self.assertEqual("Math 101", info['sections'][0].section_name)
+        self.assertEqual("1", info['sections'][0].section_id)
+        self.assertEqual("1", info['sections'][0].term_id)
+        self.assertEqual("teacher'%&teacherII", info['sections'][0].instructor)
 
     def test_view_as_student(self):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='student',permissive=True)
         request = testing.DummyRequest()
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
         request.GET['id'] = 1
         from views import view_index
         info = view_index(request)
         self.assertEqual(info['messages'], ['Welcome student to pyquiz.', 'You are currently enrolled in the following classes:', ''])
-        self.assertEqual(1, len(info['courses']))
-        self.assertEqual("Math 101", info['courses'][0].course_name)
-        self.assertEqual("1", info['courses'][0].course_id)
-        self.assertEqual("1", info['courses'][0].term_id)
-        self.assertEqual("teacher'%&teacherII", info['courses'][0].instructor)
+        self.assertEqual(1, len(info['sections']))
+        self.assertEqual("Math 101", info['sections'][0].section_name)
+        self.assertEqual("1", info['sections'][0].section_id)
+        self.assertEqual("1", info['sections'][0].term_id)
+        self.assertEqual("teacher'%&teacherII", info['sections'][0].instructor)
 
 
 class ViewQuestion(unittest.TestCase):
@@ -675,7 +675,7 @@ class ViewQuestion(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        request.session.update({'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
         from views import view_question
         return view_question(request)
 
@@ -692,7 +692,7 @@ class ViewQuestion(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         from views import view_create_test
         view_create_test(request)
         request = testing.DummyRequest({'id': 3,
@@ -706,7 +706,7 @@ class ViewQuestion(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         from views import view_create_test
 
         view_create_test(request)
@@ -721,7 +721,7 @@ class ViewQuestion(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         from views import view_create_test
         view_create_test(request)
         request = testing.DummyRequest({'id': 3,
@@ -799,7 +799,7 @@ class ViewTest(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        request.session.update({'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
         from views import view_test
         return view_test(request)
 
@@ -816,7 +816,7 @@ class ViewTest(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         from views import view_create_test
         view_create_test(request)
         request = testing.DummyRequest({'id': 3,
@@ -830,7 +830,7 @@ class ViewTest(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         from views import view_create_test
         view_create_test(request)
         request = testing.DummyRequest({'id': 3,
@@ -844,7 +844,7 @@ class ViewTest(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}}
         from views import view_create_test
         view_create_test(request)
         request = testing.DummyRequest({'id': 3,
@@ -884,7 +884,7 @@ class ViewGradeTest(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        request.session.update({'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
         from views import view_grade_test
         return view_grade_test(request)
 
@@ -1017,7 +1017,7 @@ class ViewUngradedTests(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        request.session.update({'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
         from views import view_ungraded_tests
         return view_ungraded_tests(request)
 
@@ -1060,7 +1060,7 @@ class ViewGradeQuestion(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        request.session.update({'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
         request.GET['id'] = 1
         from views import view_grade_question
         return view_grade_question(request)
@@ -1136,7 +1136,7 @@ class ViewGradeSubmittedTest(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        request.session.update({'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
         from views import view_grade_submitted_test
         return view_grade_submitted_test(request)
 
@@ -1242,7 +1242,7 @@ class ViewGradeSubmittedTest(unittest.TestCase):
         self.assertEqual(info['answers'][0].html, '<p>3. Graded: Incorrect</p>')
 
 
-class ViewCourseTeacher(unittest.TestCase):
+class ViewSectionTeacher(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
         self.session = _initTestingDB()
@@ -1255,22 +1255,22 @@ class ViewCourseTeacher(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
-        from views import view_course_teacher
-        return view_course_teacher(request)
+        request.session.update({'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        from views import view_section_teacher
+        return view_section_teacher(request)
 
     def test_permission_denied(self):
         request = testing.DummyRequest({'id':1})
         self.config.testing_securitypolicy(userid='student',permissive=True)
-        from views import view_course_teacher
-        info = view_course_teacher(request)
+        from views import view_section_teacher
+        info = view_section_teacher(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
-        request.session ={'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
+        request.session ={'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}}
         request.GET['id'] = 1
-        info = view_course_teacher(request)
+        info = view_section_teacher(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
 
-    def test_view_course_teacher(self):
+    def test_view_section_teacher(self):
         oldtest = Test("OldTest", 1, datetime.datetime.now()-datetime.timedelta(days=20),
                                       datetime.datetime.now()-datetime.timedelta(days=19),
                                       5000, "assignment", 1)
@@ -1289,19 +1289,19 @@ class ViewCourseTeacher(unittest.TestCase):
         info = self._callFUT(request)
         self.assertTrue('current_test' not in request.session)
 
-    def test_view_course_teacher_no_tests(self):
-        _addCourseDB(self.session)
+    def test_view_section_teacher_no_tests(self):
+        _addSectionDB(self.session)
         request = testing.DummyRequest({'id':1})
         request.session['current_test']="I am a test"
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
-        from views import view_course_teacher
-        info = view_course_teacher(request)
+        request.session.update({'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        from views import view_section_teacher
+        info = view_section_teacher(request)
         self.assertTrue('current_test' not in request.session)
 
 
-class ViewCourse(unittest.TestCase):
+class ViewSection(unittest.TestCase):
     def setUp(self):
         self.config = testing.setUp()
         self.session = _initTestingDB()
@@ -1314,30 +1314,30 @@ class ViewCourse(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
-        from views import view_course
-        return view_course(request)
+        request.session.update({'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        from views import view_section
+        return view_section(request)
 
     def _callFUTStudent(self,request):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='student',
                                            permissive=True)
-        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}})
-        from views import view_course
-        return view_course(request)
+        request.session.update({'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}})
+        from views import view_section
+        return view_section(request)
 
     def test_permission_denied(self):
         request = testing.DummyRequest({'id':1})
         self.config.testing_securitypolicy(userid='student',permissive=True)
-        from views import view_course
-        info = view_course(request)
+        from views import view_section
+        info = view_section(request)
         self.assertEqual(type(info),type(HTTPFound(location='/')))
 
-    def test_view_course_as_teacher(self):
+    def test_view_section_as_teacher(self):
         request = testing.DummyRequest({'id':1})
         info = self._callFUTTeacher(request)
 
-    def test_view_course_as_student(self):
+    def test_view_section_as_student(self):
         oldtest = Test("OldTest", 1, datetime.datetime.now()-datetime.timedelta(days=20),
                                       datetime.datetime.now()-datetime.timedelta(days=19),
                                       5000, "assignment", 1)
@@ -1359,7 +1359,7 @@ class ViewCourse(unittest.TestCase):
         self.assertEqual(len(info['current_tests']), 2)
         self.assertEqual(len(info['old_tests']), 2)
         self.assertEqual(len(info['upcoming_tests']), 1)
-        self.assertEqual(info['messages'],[u'Course: Math 101', u"Instructor(s): teacher', teacherII", 'There are 5 tests to take:'])
+        self.assertEqual(info['messages'],[u'Section: Math 101', u"Instructor(s): teacher', teacherII", 'There are 5 tests to take:'])
 
 
 class LoginTest(unittest.TestCase):
@@ -1378,7 +1378,7 @@ class LoginTest(unittest.TestCase):
                                           permissive=True)
         request.params = {'login': u'name', 'password': u'password', 'form.submitted': u'Log In'}
         info = login(request)
-        self.assertEqual(request.session, {'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'name', 'roles': ['teacher']}})
+        self.assertEqual(request.session, {'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'name', 'roles': ['teacher']}})
         self.assertEqual(type(info), type(HTTPFound()))
         self.assertEqual(info.location, '/index')
         
@@ -1406,7 +1406,7 @@ class LoginTest(unittest.TestCase):
         _populateDB(self.session)
         self.config.testing_securitypolicy(userid='student',
                                            permissive=True)
-        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}})
+        request.session.update({'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'student', 'roles': ['student']}})
         info = login(request)
         self.assertEqual(type(info), type(HTTPFound()))
     
@@ -1416,42 +1416,42 @@ class LoginTest(unittest.TestCase):
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
         request.params = {'login': u'name', 'password': u'password', 'form.submitted': u'Log In'}
-        request.session.update({'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
+        request.session.update({'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}})
         info = logout(request)
         self.assertEqual(request.session, {})
         self.assertEqual(type(info), type(HTTPFound()))
         
-    def test_schooltool_no_courses(self):
+    def test_schooltool_no_sections(self):
         request = testing.DummyRequest()
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        userinfo = {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}
+        userinfo = {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'teacher', 'roles': ['teacher']}
         userinfo = schooltool_login('name','password',userinfo)
         dbsession = DBSession()
-        c = dbsession.query(Course).filter(Course.course_id == 1).all()
-        self.assertEqual(c[0].course_name,"Math101 (1)")
+        c = dbsession.query(Section).filter(Section.section_id == 1).all()
+        self.assertEqual(c[0].section_name,"Math101 (1)")
         self.assertEqual(c[0].instructor,"teacher")
         
-    def test_schooltool_no_courses_student(self):
+    def test_schooltool_no_sections_student(self):
         request = testing.DummyRequest()
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
-        userinfo = {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'Student', 'roles': []}
+        userinfo = {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'Student', 'roles': []}
         userinfo = schooltool_login('Student','password',userinfo)
         dbsession = DBSession()
-        c = dbsession.query(Course).filter(Course.course_id == 1).all()
-        self.assertEqual(c[0].course_name,"Math101 (1)")
+        c = dbsession.query(Section).filter(Section.section_id == 1).all()
+        self.assertEqual(c[0].section_name,"Math101 (1)")
 
     def test_log_in_no_instructor(self):
         request = testing.DummyRequest()
-        course = Course(1,1,"Math 101", "")
-        self.session.add(course)
+        section = Section(1,1,"Math 101", "")
+        self.session.add(section)
         self.session.flush()
         self.config.testing_securitypolicy(userid='teacher',
                                           permissive=True)
         request.params = {'login': u'name', 'password': u'password', 'form.submitted': u'Log In'}
         info = login(request)
-        self.assertEqual(request.session, {'user': {'courses': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'name', 'roles': ['teacher']}})
+        self.assertEqual(request.session, {'user': {'sections': [['quarter-one', '1', 'Math101 (1)']], 'first_name': 'Edward', 'last_name': 'Reynolds', 'name': 'name', 'roles': ['teacher']}})
 
 
 class ZFunctionalTests(unittest.TestCase): #Z so it's called last. wsgi stuff messes up deform. 
@@ -1583,32 +1583,32 @@ class ZFunctionalTests(unittest.TestCase): #Z so it's called last. wsgi stuff me
         res = self.testapp.get('/test?id=1', status=200)
         self.assertTrue('' in res.body)
 
-    def test_course_anonymous(self):
-        res = self.testapp.get('/course?id=1', status=302)
+    def test_section_anonymous(self):
+        res = self.testapp.get('/section?id=1', status=302)
         self.assertTrue('' in res.body)
 
-    def test_course_teacher(self):
+    def test_section_teacher(self):
         self.testapp.get(self.teacher_login, status=302)
-        res = self.testapp.get('/course?id=1', status=302)
+        res = self.testapp.get('/section?id=1', status=302)
         self.assertTrue('' in res.body)
 
-    def test_course_student(self):
+    def test_section_student(self):
         self.testapp.get(self.student_login, status=302)
-        res = self.testapp.get('/course?id=1', status=200)
+        res = self.testapp.get('/section?id=1', status=200)
         self.assertTrue('' in res.body)
 
-    def test_course_teacher_anonymous(self):
-        res = self.testapp.get('/course_teacher?id=1', status=302)
+    def test_section_teacher_anonymous(self):
+        res = self.testapp.get('/section_teacher?id=1', status=302)
         self.assertTrue('' in res.body)
 
-    def test_course_teacher_teacher(self):
+    def test_section_teacher_teacher(self):
         self.testapp.get(self.teacher_login, status=302)
-        res = self.testapp.get('/course_teacher?id=1', status=200)
+        res = self.testapp.get('/section_teacher?id=1', status=200)
         self.assertTrue('' in res.body)
 
-    def test_course_teacher_student(self):
+    def test_section_teacher_student(self):
         self.testapp.get(self.student_login, status=302)
-        res = self.testapp.get('/course_teacher?id=1', status=302)
+        res = self.testapp.get('/section_teacher?id=1', status=302)
         self.assertTrue('' in res.body)
 
     def test_grade_anonymous(self):

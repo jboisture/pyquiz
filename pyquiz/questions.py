@@ -3,7 +3,8 @@ This file contains the logic responsible for parsing the form data
 and creating the test, questions and answers.
 """
 from pyquiz.models import DBSession
-from pyquiz.models import Test, Question, Answer, Course, TakenTest, TakenAnswer
+from pyquiz.models import Test, Question, Answer, Section
+from pyquiz.models import Term, TakenTest, TakenAnswer
 import colander
 import deform
 
@@ -287,7 +288,7 @@ def parse_add_form_data(controls, dbsession, question_num, test):
 
 
 
-def parse_form_data(controls, course_id, dbsession):
+def parse_form_data(controls, section_id, dbsession):
     """
     This function parses the controls from the test creation form
     and puts the newly created test, questions, and answers into
@@ -301,19 +302,26 @@ def parse_form_data(controls, course_id, dbsession):
                    #questions,and answers
         
         if controls[c][0] == "name":
+
             testname = str(controls[c][1])
-            attempts = int(controls[c+1][1])
-            start_time = str(controls[c+2][1]).split('-')
-            end_time = str(controls[c+3][1]).split('-')
-            test_type = str(controls[c+4][1])
+            selected_term = str(controls[c+1][1])
+            attempts = int(controls[c+2][1])
+            start_time = str(controls[c+3][1]).split('-')
+            end_time = str(controls[c+4][1]).split('-')
+            test_type = str(controls[c+5][1])
             import datetime
             start_time = datetime.datetime(int(start_time[0]), int(start_time[1]),int(start_time[2]))
             end_time = (datetime.datetime(int(end_time[0]), int(end_time[1]),int(end_time[2]))
                                                                + datetime.timedelta(hours=23, minutes=59))
-            course = dbsession.query(Course).filter(Course.id == course_id).first()
+            section = dbsession.query(Section).filter(Section.id == section_id).first()
+            terms = dbsession.query(Term).filter(Term.section_id == section.id).all()
+            term = terms[0]
+            for t in terms:
+                if t.term_id == selected_term:
+                    term = t
             server = ServerProxy(serverLocation, transport = trans)
-            schooltool_id = server.add_activity(course.term_id, course.course_id, testname, test_type)
-            newTest = Test(testname, course_id, start_time, end_time, attempts, test_type, schooltool_id)
+            schooltool_id = server.add_activity(term.term_id, section.course_id, testname, test_type)
+            newTest = Test(testname, section_id, start_time, end_time, attempts, test_type, schooltool_id, term.term_id, term.term_name)
             dbsession.add(newTest)
             dbsession.flush()
             foundTest = True

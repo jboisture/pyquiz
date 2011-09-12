@@ -5,7 +5,7 @@ from pyramid.security import unauthenticated_userid
 from pyramid.security import authenticated_userid
 from pyramid.url import route_url
 from pyramid.renderers import get_renderer
-from pyquiz.models import DBSession, Course
+from pyquiz.models import DBSession, Term, Section
 
 from pyquiz.security import USERS
 from xmlrpclib import ServerProxy
@@ -17,23 +17,37 @@ def schooltool_login(username, password,user_info):
     """
     server = ServerProxy(serverLocation, transport = trans)
     dbsession = DBSession()
+    courses = []
     for course in user_info['courses']:
-        c = dbsession.query(Course).filter(Course.course_id == course[1]).all()
-        if len(c) == 0: 
+        name = user_info['first_name']+" "+user_info['last_name']
+        sections = dbsession.query(Section).filter(
+                               Section.course_id == course[2]).all()
+        if len(sections) != 0:
+            section = sections[0]
+        else:
             if 'teacher' not in user_info['roles']: 
-                 new_course = Course(course[0], course[1], course[2], '')
-            if 'teacher' in user_info['roles']:
-                 new_course = Course(course[0], course[1], course[2], user_info['name'])
+                section = Section(course[5], course[2], course[0], '')
+            if 'teacher' in user_info['roles']: 
+                section = Section(course[5], course[2], course[0], name)
+            print 
+            dbsession.add(section)
+            dbsession.flush()
+        if section.id not in courses:
+            courses.append(section.id)
+        c = dbsession.query(Term).filter(Term.term_name == course[1]).all()
+        if len(c) == 0: 
+            new_course = Term(course[4], course[1], section.id)
             dbsession.add(new_course)
             dbsession.flush()
-        if len(c) == 1 and user_info['roles'] == ['teacher']:
-            if (len(c[0].instructor) != 0 and 
-                          user_info['name'] not in c[0].instructor):
-                c[0].instructor += "%&"
-                c[0].instructor += user_info['name']
-            elif len(c[0].instructor) == 0:
-                c[0].instructor += user_info['name']
+        if len(sections) == 1 and user_info['roles'] == ['teacher']:
+            if (len(section.instructor) != 0 and 
+                          name not in section.instructor):
+                section.instructor += "%&"
+                section.instructor += name
+            elif len(section.instructor) == 0:
+                section.instructor += name
             dbsession.flush()
+    user_info['courses'] = courses
     return user_info
 
 

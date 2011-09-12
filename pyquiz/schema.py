@@ -17,6 +17,8 @@ from deform import Form
 from deform import widget
 from deform import FileData
 
+from pyquiz.models import DBSession
+
 
 class EditAnswerSchema(MappingSchema):
     """
@@ -111,6 +113,11 @@ class TestSchema(Schema):
     """
     import datetime
     name = SchemaNode(String())
+    dbsession = DBSession()
+    terms = SchemaNode(
+                String(),
+                widget=widget.SelectWidget()
+                )
     attempts = SchemaNode(String())
     start_date =SchemaNode( Date(),
                 validator=Range(

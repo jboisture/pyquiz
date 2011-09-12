@@ -16,6 +16,7 @@
         <td>Edit</td>
         <td>Start Date</td>
         <td>End Date</td>
+        <td>Term</td>
         <td>Ungraded Assignments</td>
         </tr>
         <tr tal:repeat="test old_tests">
@@ -23,6 +24,7 @@
             <td><a href="${test.edit}">edit</a></td>
             <td>${test.start_time.ctime()[:-13]}</td>
             <td>${test.end_time.ctime()[:-13]}</td>
+            <td>${test.term_name}</td>
             <td>${test.ungraded_tests}</td>
         </tr>
         <tr tal:repeat="test current_tests">
@@ -30,6 +32,7 @@
             <td><a href="${test.edit}">edit</a></td>
             <td>${test.start_time.ctime()[:-13]}</td>
             <td>${test.end_time.ctime()[:-13]}</td>
+            <td>${test.term_name}</td>
             <td>${test.ungraded_tests}</td>
         </tr>
         <tr tal:repeat="test upcoming_tests">
@@ -37,6 +40,7 @@
             <td><a href="${test.edit}">edit</a></td>
             <td>${test.start_time.ctime()[:-13]}</td>
             <td>${test.end_time.ctime()[:-13]}</td>
+            <td>${test.term_name}</td>
             <td>${test.ungraded_tests}</td>
         </tr>
         </table>

@@ -7,22 +7,31 @@ from pyramid.request import Request
 from pyramid.httpexceptions import HTTPFound, HTTPSeeOther
 from pyramid.renderers import get_renderer
 
-from schema import TestSchema, EditQuestionSchema
+from schema import EditQuestionSchema
 from schema import EditShortAnswerQuestionSchema, AddQuestionsSchema
 
 from pyramid.security import authenticated_userid
 from pyramid.interfaces import IAuthenticationPolicy
 
 from colander import MappingSchema
+from colander import SequenceSchema
 from colander import SchemaNode
 from colander import String
+from colander import Boolean
+from colander import Schema
+from colander import Date
+from colander import Range
+
+from deform import ValidationFailure
+from deform import Form
+from deform import widget
+from deform import FileData
+from schema import Questions
+from schema import ShortAnswerQuestions
 
 import colander
 
 import deform
-from deform import ValidationFailure
-from deform import Form
-from deform import widget
 
 from questions import *
 
@@ -40,18 +49,50 @@ def view_create_test(request):
     if 'user' not in request.session.keys() or 'teacher' not in request.session['user']['roles'] :
         return HTTPFound(location='/')
     main = get_renderer('templates/master.pt').implementation()
-
-    course_id = int(request.GET["id"])
+    dbsession = DBSession()
+    section_id = int(request.GET["id"])
+    terms = dbsession.query(Term).filter(
+                             Term.section_id == section_id).all()
+    choices = []
+    for term in terms:
+        choices.append((term.term_id, term.term_name))
+    class TestSchema(Schema):
+        """
+        Schema that stores the test being created.
+        """
+        import datetime
+        name = SchemaNode(String())
+        term = SchemaNode(
+                    String(),
+                    widget=widget.SelectWidget(values = choices)
+                    )
+        attempts = SchemaNode(String())
+        start_date =SchemaNode( Date(),
+                    validator=Range(
+                        min=datetime.datetime.now(),
+                        min_err=('${val} is earlier than earliest date ${min}')))
+        end_date = SchemaNode( Date(),
+                    validator=Range(
+                        min=datetime.datetime.now(),
+                        min_err=('${val} is earlier than earliest date ${min}')))
+        test_type = SchemaNode(String(),
+                               widget = widget.SelectWidget(values=
+                                                    (('assignment', 'Assignment'),
+                                                    ('homework', 'Homework'),
+                                                    ('exam', 'Exam')))
+                               )
+        questions = Questions()
+        short_answer_questions = ShortAnswerQuestions()
     schema = TestSchema()
     myform = Form(schema, buttons=('submit',), 
                   use_ajax=True)  #create the form for the page
     if 'submit' in request.POST: # check if the submit button was clicked
         controls = request.POST.items() # get the data from the form
         dbsession = DBSession()
-        parse_form_data(controls, course_id, dbsession)
-        return HTTPFound(location='/course?id='+str(course_id)) #redirect to homepage
+        parse_form_data(controls, section_id, dbsession)
+        return HTTPFound(location='/course?id='+str(section_id)) #redirect to homepage
     now = datetime.datetime.now()
-    appstruct = {'start_date':now, 'end_date':now}
+    appstruct = {'start_date':now, 'end_date':now, 'terms':choices}
     return {'form':myform.render(appstruct), 'main': main}
 
 def view_add_questions(request):
@@ -170,7 +211,7 @@ def view_edit_question(request):
 
 def view_delete_test(request):
     """
-    This view allows teachers to delete a test in a course they teach
+    This view allows teachers to delete a test in a section they teach
     """
     if 'user' not in request.session.keys() or 'teacher' not in request.session['user']['roles'] :
         return HTTPFound(location='/')
@@ -178,7 +219,7 @@ def view_delete_test(request):
     test_id = int(request.GET["id"])
     dbsession = DBSession()
     test = dbsession.query(Test).filter(Test.id == test_id).first()
-    course = dbsession.query(Course).filter(Course.id == test.course).first()
+    section = dbsession.query(Section).filter(Section.id == test.course).first()
     post = request.POST
     if 'no' in post:
         return HTTPFound(location='/edit_test?id='+str(test.id))
@@ -199,7 +240,7 @@ def view_delete_test(request):
     message = []
     message.append("Are you sure you want to delete this test?")
     message.append("Test: " + test.name)
-    message.append("Course: " + course.course_name)
+    message.append("Course: " + section.course_name)
     class deleteForm(colander.Schema):
         pass
     schema = deleteForm()
@@ -254,18 +295,18 @@ def view_index(request):
         messages.append('You are currently teaching the following classes:')
     if authenticated_userid(request) == 'student':
         messages.append('You are currently enrolled in the following classes:')
-    courses = []
+    sections = []
     for c in userinfo['courses']:
-        course = dbsession.query(Course).filter(
-                                       Course.course_id == c[1]).first()
-        if course != None:
-             courses.append(course)
+        section = dbsession.query(Section).filter(
+                                 Section.course_id == c).first()
+        if section != None:
+             sections.append(section)
     messages.append('')
 #    if len(courses) == 0:
 #        messages[2] == 'You have no classes' ##Depreceated due to SchoolTool integration? 
-    for course in courses:
-        course.url = 'course?id='+str(course.id)
-    return {'messages': messages, 'courses': courses, 'main': main}
+    for section in sections:
+        section.url = 'course?id='+str(section.id)
+    return {'messages': messages, 'sections': sections, 'main': main}
 
 def view_ungraded_tests(request):
     """
@@ -306,7 +347,7 @@ def view_grade_question(request):
     question = dbsession.query(Question).filter(Question.id==answer.question_id).first()
     taken_test = dbsession.query(TakenTest).filter(TakenTest.id==answer.takentest_id).first()
     test = dbsession.query(Test).filter(Test.id == taken_test.test_id).first()
-    course = dbsession.query(Course).filter(Course.id == test.course).first()
+    section = dbsession.query(Section).filter(Section.id == test.course).first()
     num_questions = len(dbsession.query(Question).filter(Question.test_id == test.id).all())
     post = request.POST
     if 'correct' in post or 'incorrect' in post:
@@ -326,10 +367,10 @@ def view_grade_question(request):
             new_grade = int(((taken_test.correct_graded_questions*1.0)/ num_questions)*100)
             #submit grade to school tool
             server = ServerProxy(serverLocation, transport = trans)
-            grade = server.check_grade(course.term_id, course.course_id, 
-                              taken_test.username, test.schooltool_id)
+            grade = server.check_grade(test.term_id, section.course_id, 
+                                taken_test.username, test.schooltool_id)
             if grade == None or grade < new_grade or grade == '':
-                server.submit_grade(course.term_id, course.course_id, 
+                server.submit_grade(test.term_id, section.course_id, 
                                 taken_test.username, test.schooltool_id, new_grade)
                 taken_test.has_ungraded = False
             return HTTPFound(location='/ungraded_tests?id='+str(test.id))
@@ -392,7 +433,7 @@ def view_course_teacher(request):
         return HTTPFound(location='/course?id='+str(course_id))
     main = get_renderer('templates/master.pt').implementation()
     dbsession = DBSession()
-    course = dbsession.query(Course).filter(Course.id == course_id).first()
+    section = dbsession.query(Section).filter(Section.id == course_id).first()
     tests = dbsession.query(Test).filter(Test.course == course_id).all() #load all tests
     for test in tests:
         test.edit = "edit_test?id="+str(test.id) 
@@ -424,8 +465,8 @@ def view_course_teacher(request):
             old_tests.append(test)
         else: current_tests.append(test)
     messages = []
-    messages.append("Course: "+course.course_name)
-    instructors = course.instructor.split('%&')
+    messages.append("Course: "+section.course_name)
+    instructors = section.instructor.split('%&')
     m = "Instructor(s): " + instructors[0]
     i = 1
     while i < len(instructors):
@@ -435,7 +476,7 @@ def view_course_teacher(request):
     if len(tests) > 0:
         messages.append('There are ungraded tests in the following tests.')
     else: messages.append('There are no tests to grade.')
-    link = ('/create_test?id='+str(course.id),
+    link = ('/create_test?id='+str(section.id),
                                'Create A New Test')
     return {'old_tests':old_tests, 'current_tests':current_tests,'upcoming_tests':upcoming_tests,
             'messages':messages, 'link':link, 'main': main}
@@ -455,7 +496,7 @@ def view_course(request):
     if 'current_test' in request.session.keys(): 
         request.session.pop('current_test')
     dbsession = DBSession()
-    course = dbsession.query(Course).filter(Course.id == course_id).first()
+    section = dbsession.query(Section).filter(Section.id == course_id).first()
     tests = dbsession.query(Test).filter(Test.course == course_id).all() #load all tests
     for test in tests:
         test.url = "test?id="+str(test.id) #create url for each test to pass to
@@ -478,8 +519,8 @@ def view_course(request):
             else:
                 current_tests.append(test)
     messages = []
-    messages.append("Course: "+course.course_name)
-    instructors = course.instructor.split('%&')
+    messages.append("Course: "+section.course_name)
+    instructors = section.instructor.split('%&')
     m = "Instructor(s): " + instructors[0]
     i = 1
     while i < len(instructors):
@@ -639,7 +680,7 @@ def view_grade_test(request):
     test_id = int(request.GET["id"])
     dbsession = DBSession()
     test = dbsession.query(Test).filter(Test.id==test_id).first()
-    course = dbsession.query(Course).filter(Course.id == test.course).first()
+    section = dbsession.query(Section).filter(Section.id == test.course).first()
     questions = dbsession.query(Question).filter(
                                     Question.test_id==test.id).all()
     num_questions = len(questions)
@@ -710,12 +751,14 @@ def view_grade_test(request):
     dbsession.flush()
     if not taken_test.has_ungraded:
         server = ServerProxy(serverLocation, transport = trans)
-        grade = server.check_grade(course.term_id, course.course_id, 
-                           request.session['user']['name'], test.schooltool_id)
+        grade = server.check_grade(test.term_id, section.course_id, 
+                                   request.session['user']['name'],
+                                   test.schooltool_id)
         new_grade = int(((1.0*correct)/num_graded)*100)
         if grade == None or grade < new_grade:
-            server.submit_grade(course.term_id, course.course_id, 
-                                request.session['user']['name'], test.schooltool_id, new_grade)
+            server.submit_grade(test.term_id, section.course_id, 
+                                request.session['user']['name'],
+                                test.schooltool_id, new_grade)
 
     ###create a report to display the result of the test###
     if num_graded > 0:
