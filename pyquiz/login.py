@@ -18,8 +18,8 @@ def schooltool_login(username, password,user_info):
     server = ServerProxy(serverLocation, transport = trans)
     dbsession = DBSession()
     courses = []
+    name = user_info['first_name']+" "+user_info['last_name']
     for course in user_info['courses']:
-        name = user_info['first_name']+" "+user_info['last_name']
         sections = dbsession.query(Section).filter(
                                Section.course_id == course[2]).all()
         if len(sections) != 0:
@@ -29,13 +29,16 @@ def schooltool_login(username, password,user_info):
                 section = Section(course[5], course[2], course[0], '')
             if 'teacher' in user_info['roles']: 
                 section = Section(course[5], course[2], course[0], name)
-            print 
             dbsession.add(section)
             dbsession.flush()
         if section.id not in courses:
             courses.append(section.id)
-        c = dbsession.query(Term).filter(Term.term_name == course[1]).all()
-        if len(c) == 0: 
+        terms = dbsession.query(Term).filter(Term.section_id == section.id).all()
+        in_db = False
+        for t in terms:
+            if t.term_name == course[4]:
+                in_db = True
+        if not in_db:
             new_course = Term(course[4], course[1], section.id)
             dbsession.add(new_course)
             dbsession.flush()
