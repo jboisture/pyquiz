@@ -31,8 +31,8 @@ def schooltool_login(username, password,user_info):
                 section = Section(course[5], course[2], course[0], name)
             dbsession.add(section)
             dbsession.flush()
-        if section.id not in courses:
-            courses.append(section.id)
+        if section.course_id not in courses:
+            courses.append(section.course_id)
         terms = dbsession.query(Term).filter(Term.section_id == section.id).all()
         in_db = False
         for t in terms:
